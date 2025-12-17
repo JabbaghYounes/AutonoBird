@@ -42,4 +42,4 @@ Subsystem-specific documentation lives alongside the code under `scripts/<subsys
 
 ## Licence
 
-Project licence to be confirmed.
+[MIT](LICENSE). © 2025 Younes Jabbagh.
