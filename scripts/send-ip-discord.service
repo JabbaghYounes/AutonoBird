@@ -1,0 +1,14 @@
+[Unit]
+Description=Send IP Address to Discord on Boot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/pi/AutonoBird/scripts/send_ip_discord.py
+User=pi
+WorkingDirectory=/home/pi/AutonoBird/scripts
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
