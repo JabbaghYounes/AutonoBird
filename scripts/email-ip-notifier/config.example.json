@@ -1,4 +1,5 @@
 {
+    "device_name": "My Pi",
     "smtp_host": "smtp.gmail.com",
     "smtp_port": 587,
     "smtp_user": "YOUR_EMAIL@gmail.com",

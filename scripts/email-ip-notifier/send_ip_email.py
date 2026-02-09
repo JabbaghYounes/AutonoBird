@@ -106,7 +106,11 @@ def send_ip_email(config):
     body += f"\nSSH: ssh {config.get('ssh_user', 'pi')}@{local_ip}\n"
 
     msg = MIMEText(body)
-    msg["Subject"] = f"Pi ({hostname}) booted - {local_ip}"
+    device_name = config.get("device_name", "")
+    if device_name:
+        msg["Subject"] = f"{device_name} ({hostname}) booted - {local_ip}"
+    else:
+        msg["Subject"] = f"Pi ({hostname}) booted - {local_ip}"
     msg["From"] = config["smtp_user"]
     msg["To"] = config["recipient_email"]
 
