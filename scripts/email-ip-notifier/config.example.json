@@ -1,0 +1,9 @@
+{
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
+    "smtp_user": "YOUR_EMAIL@gmail.com",
+    "smtp_password": "YOUR_APP_PASSWORD",
+    "recipient_email": "YOUR_EMAIL@gmail.com",
+    "ssh_user": "pi",
+    "include_external_ip": false
+}

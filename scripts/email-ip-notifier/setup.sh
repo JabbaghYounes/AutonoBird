@@ -1,16 +1,15 @@
 #!/bin/bash
 #
-# Setup script for Raspberry Pi 5 Discord IP Notifier
+# Setup script for Raspberry Pi 5 Email IP Notifier
 # Run this on your Raspberry Pi after copying the files
 #
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVICE_FILE="send-ip-discord.service"
-INSTALL_DIR="/home/pi/AutonoBird/scripts"
+SERVICE_FILE="send-ip-email.service"
 
-echo "=== Discord IP Notifier Setup ==="
+echo "=== Email IP Notifier Setup ==="
 echo ""
 
 # Check if running as root for service installation
@@ -19,38 +18,33 @@ if [ "$EUID" -ne 0 ]; then
     echo ""
 fi
 
-# Install Python dependency
-echo "[1/4] Installing discord.py..."
-pip3 install discord.py --break-system-packages 2>/dev/null || pip3 install discord.py
-
-# Check for config file
-echo ""
-echo "[2/4] Checking configuration..."
+# No pip dependencies needed - uses Python stdlib only
+echo "[1/3] Checking configuration..."
 if [ ! -f "$SCRIPT_DIR/config.json" ]; then
-    echo "  Creating config.json from template..."
     cp "$SCRIPT_DIR/config.example.json" "$SCRIPT_DIR/config.json"
+    echo "  Created config.json from template."
     echo ""
-    echo "  !!! IMPORTANT: Edit config.json with your Discord credentials !!!"
+    echo "  !!! IMPORTANT: Edit config.json with your email credentials !!!"
     echo "  File location: $SCRIPT_DIR/config.json"
     echo ""
     echo "  You need to set:"
-    echo "    - bot_token: Your Discord bot token"
-    echo "    - discord_user_id: Your Discord user ID"
+    echo "    - smtp_user:        Your email address"
+    echo "    - smtp_password:    Your app password (NOT your real password)"
+    echo "    - recipient_email:  Where to send the notification"
 else
     echo "  config.json already exists"
 fi
 
 # Make main script executable
 echo ""
-echo "[3/4] Setting permissions..."
-chmod +x "$SCRIPT_DIR/send_ip_discord.py"
+echo "[2/3] Setting permissions..."
+chmod +x "$SCRIPT_DIR/send_ip_email.py"
 
 # Install systemd service
 echo ""
-echo "[4/4] Installing systemd service..."
+echo "[3/3] Installing systemd service..."
 if [ "$EUID" -eq 0 ]; then
-    # Update paths in service file for current install location
-    sed "s|/home/pi/AutonoBird/scripts|$SCRIPT_DIR|g" "$SCRIPT_DIR/$SERVICE_FILE" > /etc/systemd/system/$SERVICE_FILE
+    sed "s|/home/pi/AutonoBird/scripts/email-ip-notifier|$SCRIPT_DIR|g" "$SCRIPT_DIR/$SERVICE_FILE" > /etc/systemd/system/$SERVICE_FILE
 
     systemctl daemon-reload
     systemctl enable $SERVICE_FILE
@@ -73,9 +67,7 @@ echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Create a Discord bot at https://discord.com/developers/applications"
-echo "  2. Copy the bot token to config.json"
-echo "  3. Get your Discord user ID and add to config.json"
-echo "  4. Invite bot to a server you share (for DMs to work)"
-echo "  5. Test with: python3 $SCRIPT_DIR/send_ip_discord.py"
+echo "  1. Edit config.json with your SMTP credentials"
+echo "  2. For Gmail: generate an app password at https://myaccount.google.com/apppasswords"
+echo "  3. Test with: python3 $SCRIPT_DIR/send_ip_email.py"
 echo ""

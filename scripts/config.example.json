@@ -1,6 +1,0 @@
-{
-    "bot_token": "YOUR_DISCORD_BOT_TOKEN_HERE",
-    "discord_user_id": "YOUR_DISCORD_USER_ID_HERE",
-    "ssh_user": "pi",
-    "include_external_ip": false
-}

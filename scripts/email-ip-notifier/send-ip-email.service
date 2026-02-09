@@ -1,0 +1,14 @@
+[Unit]
+Description=Send IP Address via Email on Boot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/pi/AutonoBird/scripts/email-ip-notifier/send_ip_email.py
+User=pi
+WorkingDirectory=/home/pi/AutonoBird/scripts/email-ip-notifier
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
