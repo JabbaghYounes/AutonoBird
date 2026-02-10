@@ -55,6 +55,20 @@ def get_hostname():
         return "unknown"
 
 
+def get_wifi_ssid():
+    """Get the name of the connected WiFi network."""
+    try:
+        result = subprocess.run(
+            ["iwgetid", "-r"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
+
+
 def get_external_ip():
     """Get external/public IP address."""
     try:
@@ -88,6 +102,7 @@ def send_ip_email(config):
     hostname = get_hostname()
     local_ip = get_local_ip()
     all_ips = get_all_ips()
+    wifi_ssid = get_wifi_ssid()
     external_ip = get_external_ip() if config.get("include_external_ip", False) else None
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -96,6 +111,9 @@ def send_ip_email(config):
     body += f"Hostname:    {hostname}\n"
     body += f"Time:        {timestamp}\n"
     body += f"Local IP:    {local_ip or 'Not available'}\n"
+
+    if wifi_ssid:
+        body += f"WiFi:        {wifi_ssid}\n"
 
     if len(all_ips) > 1:
         body += f"All IPs:     {', '.join(all_ips)}\n"

@@ -8,6 +8,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_FILE="send-ip-email.service"
+ACTUAL_USER="${SUDO_USER:-$(whoami)}"
 
 echo "=== Email IP Notifier Setup ==="
 echo ""
@@ -44,7 +45,7 @@ chmod +x "$SCRIPT_DIR/send_ip_email.py"
 echo ""
 echo "[3/3] Installing systemd service..."
 if [ "$EUID" -eq 0 ]; then
-    sed "s|/home/pi/AutonoBird/scripts/email-ip-notifier|$SCRIPT_DIR|g" "$SCRIPT_DIR/$SERVICE_FILE" > /etc/systemd/system/$SERVICE_FILE
+    sed -e "s|INSTALL_DIR|$SCRIPT_DIR|g" -e "s|INSTALL_USER|$ACTUAL_USER|g" "$SCRIPT_DIR/$SERVICE_FILE" > /etc/systemd/system/$SERVICE_FILE
 
     systemctl daemon-reload
     systemctl enable $SERVICE_FILE

@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /home/pi/AutonoBird/scripts/email-ip-notifier/send_ip_email.py
-User=pi
-WorkingDirectory=/home/pi/AutonoBird/scripts/email-ip-notifier
+ExecStart=/usr/bin/python3 INSTALL_DIR/send_ip_email.py
+User=INSTALL_USER
+WorkingDirectory=INSTALL_DIR
 RemainAfterExit=no
 
 [Install]
