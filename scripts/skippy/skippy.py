@@ -21,6 +21,7 @@ import wave
 from pathlib import Path
 
 # Suppress ALSA/JACK error spam from PyAudio device enumeration
+os.environ["JACK_NO_START_SERVER"] = "1"
 try:
     _alsa_err = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_int,
                                  ctypes.c_char_p, ctypes.c_int,
@@ -207,11 +208,18 @@ class SpeechRecorder:
                         rate=self.RATE, input=True,
                         frames_per_buffer=self.CHUNK)
 
+        # Discard first 0.3s to flush beep echo from mic buffer
+        warmup_chunks = int(0.3 * self.RATE / self.CHUNK)
+        for _ in range(warmup_chunks):
+            stream.read(self.CHUNK, exception_on_overflow=False)
+
         frames = []
         silent_chunks = 0
+        speech_chunks = 0
         max_silent = int(self.silence_duration * self.RATE / self.CHUNK)
         max_chunks = int(self.max_duration * self.RATE / self.CHUNK)
-        has_speech = False
+        # Require at least 0.5s of speech before silence detection triggers
+        min_speech_chunks = int(0.5 * self.RATE / self.CHUNK)
 
         for _ in range(max_chunks):
             data = stream.read(self.CHUNK, exception_on_overflow=False)
@@ -223,16 +231,17 @@ class SpeechRecorder:
                 silent_chunks += 1
             else:
                 silent_chunks = 0
-                has_speech = True
+                speech_chunks += 1
 
-            if has_speech and silent_chunks >= max_silent:
+            if speech_chunks >= min_speech_chunks and \
+               silent_chunks >= max_silent:
                 break
 
         stream.stop_stream()
         stream.close()
         p.terminate()
 
-        if not has_speech:
+        if speech_chunks == 0:
             return None
 
         wav_path = "/tmp/skippy_input.wav"
