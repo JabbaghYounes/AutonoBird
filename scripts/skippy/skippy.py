@@ -11,6 +11,7 @@ Usage:
 Requires config.json alongside this script. See config.example.json.
 """
 
+import ctypes
 import json
 import logging
 import os
@@ -18,6 +19,18 @@ import signal
 import sys
 import wave
 from pathlib import Path
+
+# Suppress ALSA/JACK error spam from PyAudio device enumeration
+try:
+    _alsa_err = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_int,
+                                 ctypes.c_char_p, ctypes.c_int,
+                                 ctypes.c_char_p)
+    def _alsa_error_handler(filename, line, function, err, fmt):
+        pass
+    _alsa_handle = _alsa_err(_alsa_error_handler)
+    ctypes.cdll.LoadLibrary("libasound.so.2").snd_lib_error_set_handler(_alsa_handle)
+except Exception:
+    pass
 
 import numpy as np
 import pyaudio
