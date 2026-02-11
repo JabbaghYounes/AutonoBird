@@ -11,7 +11,9 @@ Usage:
 Requires config.json alongside this script. See config.example.json.
 """
 
+import contextlib
 import ctypes
+import io
 import json
 import logging
 import os
@@ -42,6 +44,20 @@ from faster_whisper import WhisperModel
 logger = logging.getLogger("skippy")
 
 
+def _open_pyaudio():
+    """Create PyAudio instance with stderr suppressed (hides JACK noise)."""
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    old_stderr = os.dup(2)
+    os.dup2(devnull, 2)
+    try:
+        p = _open_pyaudio()
+    finally:
+        os.dup2(old_stderr, 2)
+        os.close(devnull)
+        os.close(old_stderr)
+    return p
+
+
 class AudioFeedback:
     """Generates audio feedback beeps using numpy sine waves through pyaudio."""
 
@@ -61,7 +77,7 @@ class AudioFeedback:
     def _play(self, audio_data):
         if not self.enabled:
             return
-        p = pyaudio.PyAudio()
+        p = _open_pyaudio()
         try:
             stream = p.open(format=pyaudio.paInt16, channels=1,
                             rate=self.sample_rate, output=True)
@@ -157,7 +173,7 @@ class WakeWordListener:
         self._stream = None
 
     def start(self):
-        self._pyaudio = pyaudio.PyAudio()
+        self._pyaudio = _open_pyaudio()
         self._stream = self._pyaudio.open(
             format=self.FORMAT, channels=self.CHANNELS,
             rate=self.RATE, input=True,
@@ -203,7 +219,7 @@ class SpeechRecorder:
 
     def record(self):
         """Record audio until silence or timeout. Returns WAV path or None."""
-        p = pyaudio.PyAudio()
+        p = _open_pyaudio()
         stream = p.open(format=self.FORMAT, channels=self.CHANNELS,
                         rate=self.RATE, input=True,
                         frames_per_buffer=self.CHUNK)
@@ -346,22 +362,35 @@ class Speaker:
         logger.info("Piper voice loaded")
 
     def speak(self, text):
-        """Synthesize text and play through speakers via streaming."""
+        """Synthesize text and play through speakers."""
         if not text:
             return
 
-        p = pyaudio.PyAudio()
-        stream = p.open(format=pyaudio.paInt16, channels=1,
-                        rate=self.sample_rate, output=True)
         try:
-            for audio_bytes in self.voice.synthesize_stream_raw(text):
-                stream.write(audio_bytes)
+            # Synthesize to in-memory WAV buffer
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as wf:
+                self.voice.synthesize(text, wf)
+
+            # Play the WAV data
+            buf.seek(0)
+            with wave.open(buf, "rb") as wf:
+                p = _open_pyaudio()
+                stream = p.open(
+                    format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True
+                )
+                data = wf.readframes(1024)
+                while data:
+                    stream.write(data)
+                    data = wf.readframes(1024)
+                stream.stop_stream()
+                stream.close()
+                p.terminate()
         except Exception as e:
             logger.error(f"TTS playback error: {e}")
-        finally:
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
 
 
 class Skippy:
