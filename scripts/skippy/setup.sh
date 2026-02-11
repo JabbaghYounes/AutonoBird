@@ -47,12 +47,12 @@ else
 fi
 sudo -u "$ACTUAL_USER" "$SCRIPT_DIR/venv/bin/pip" install --upgrade pip -q
 sudo -u "$ACTUAL_USER" "$SCRIPT_DIR/venv/bin/pip" install -q \
+    "numpy<2" \
     openwakeword \
     faster-whisper \
     google-genai \
     piper-tts \
-    pyaudio \
-    numpy
+    pyaudio
 echo "  Python packages installed"
 
 # Step 3: Download Piper voice model
