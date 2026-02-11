@@ -370,6 +370,9 @@ class Speaker:
             # Synthesize to in-memory WAV buffer
             buf = io.BytesIO()
             with wave.open(buf, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(self.sample_rate)
                 self.voice.synthesize(text, wf)
 
             # Play the WAV data
