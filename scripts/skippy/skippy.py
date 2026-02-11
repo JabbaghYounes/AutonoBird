@@ -50,7 +50,7 @@ def _open_pyaudio():
     old_stderr = os.dup(2)
     os.dup2(devnull, 2)
     try:
-        p = _open_pyaudio()
+        p = pyaudio.PyAudio()
     finally:
         os.dup2(old_stderr, 2)
         os.close(devnull)
