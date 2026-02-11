@@ -1,0 +1,14 @@
+{
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "gemini_model": "gemini-2.0-flash",
+    "wake_word_model": "hey_jarvis",
+    "wake_word_threshold": 0.5,
+    "whisper_model": "auto",
+    "piper_voice": "en_US-lessac-medium",
+    "silence_threshold": 500,
+    "silence_duration": 1.5,
+    "recording_timeout": 10,
+    "system_prompt": "You are Skippy, a helpful and concise voice assistant. Keep responses to 1-3 sentences since they will be spoken aloud. Be friendly and direct.",
+    "max_history_turns": 20,
+    "audio_feedback": true
+}

@@ -1,0 +1,23 @@
+[Unit]
+Description=Skippy Voice Assistant
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=INSTALL_DIR/venv/bin/python3 INSTALL_DIR/skippy.py
+User=INSTALL_USER
+WorkingDirectory=INSTALL_DIR
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+# Audio device access
+SupplementaryGroups=audio
+
+# Resource limits for stability on Pi
+MemoryMax=80%
+CPUQuota=90%
+
+[Install]
+WantedBy=multi-user.target
