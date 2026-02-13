@@ -19,6 +19,7 @@ import logging
 import os
 import signal
 import sys
+import urllib.request
 import wave
 from pathlib import Path
 
@@ -300,7 +301,7 @@ class Transcriber:
             return ""
 
 
-class Brain:
+class GeminiBrain:
     """Gemini Flash conversation engine with multi-turn history."""
 
     def __init__(self, api_key, model_name, system_prompt,
@@ -348,6 +349,97 @@ class Brain:
             except Exception as retry_err:
                 logger.error(f"Gemini retry failed: {retry_err}")
                 return "I'm sorry, I'm having trouble connecting right now."
+
+
+class OllamaBrain:
+    """Local LLM conversation engine via Ollama API."""
+
+    def __init__(self, base_url, model_name, system_prompt,
+                 max_history_turns=20):
+        self.base_url = base_url.rstrip("/")
+        self.model_name = model_name
+        self.system_prompt = system_prompt
+        self.max_history_turns = max_history_turns
+        self._history = []
+
+    def _reset_history(self):
+        self._history = []
+
+    def _call(self, messages):
+        """Send messages to Ollama chat API and return the response text."""
+        payload = json.dumps({
+            "model": self.model_name,
+            "messages": [{"role": "system", "content": self.system_prompt}]
+                        + messages,
+            "stream": False,
+        }).encode()
+
+        req = urllib.request.Request(
+            f"{self.base_url}/api/chat",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            body = json.loads(resp.read())
+        return body["message"]["content"]
+
+    def ask(self, user_text):
+        """Send user message and get response. Handles errors with retry."""
+        self._history.append({"role": "user", "content": user_text})
+
+        try:
+            reply = self._call(self._history)
+            self._history.append({"role": "assistant", "content": reply})
+
+            if len(self._history) >= self.max_history_turns * 2:
+                logger.info("Conversation history limit reached, resetting")
+                self._reset_history()
+
+            return reply
+        except Exception as e:
+            logger.error(f"Ollama API error: {e}")
+            try:
+                self._reset_history()
+                messages = [{"role": "user", "content": user_text}]
+                reply = self._call(messages)
+                self._history = [
+                    {"role": "user", "content": user_text},
+                    {"role": "assistant", "content": reply},
+                ]
+                return reply
+            except Exception as retry_err:
+                logger.error(f"Ollama retry failed: {retry_err}")
+                return "I'm sorry, I'm having trouble connecting right now."
+
+
+def create_brain(config):
+    """Factory: create the right Brain backend based on config."""
+    backend = config.get("llm_backend", "gemini")
+    system_prompt = config.get(
+        "system_prompt",
+        "You are Skippy, a helpful voice assistant. "
+        "Keep responses to 1-3 sentences."
+    )
+    max_history = config.get("max_history_turns", 20)
+
+    if backend == "gemini":
+        return GeminiBrain(
+            api_key=config["gemini_api_key"],
+            model_name=config.get("gemini_model", "gemini-2.0-flash"),
+            system_prompt=system_prompt,
+            max_history_turns=max_history,
+        )
+    elif backend == "ollama":
+        return OllamaBrain(
+            base_url=config.get("ollama_url", "http://localhost:11434"),
+            model_name=config.get("ollama_model", "llama3.2:3b"),
+            system_prompt=system_prompt,
+            max_history_turns=max_history,
+        )
+    else:
+        print(f"Error: Unknown llm_backend '{backend}' in config.json")
+        print("Supported backends: gemini, ollama")
+        sys.exit(1)
 
 
 class Speaker:
@@ -427,16 +519,7 @@ class Skippy:
             max_duration=config.get("recording_timeout", 10)
         )
         self.transcriber = Transcriber(model_size=whisper_size)
-        self.brain = Brain(
-            api_key=config["gemini_api_key"],
-            model_name=config.get("gemini_model", "gemini-2.0-flash"),
-            system_prompt=config.get(
-                "system_prompt",
-                "You are Skippy, a helpful voice assistant. "
-                "Keep responses to 1-3 sentences."
-            ),
-            max_history_turns=config.get("max_history_turns", 20)
-        )
+        self.brain = create_brain(config)
 
         voice_name = config.get("piper_voice", "en_US-lessac-medium")
         voice_path = Path(__file__).parent / "voices" / f"{voice_name}.onnx"
@@ -518,11 +601,13 @@ def load_config():
     with open(config_path) as f:
         config = json.load(f)
 
-    if not config.get("gemini_api_key") or \
-       config["gemini_api_key"] == "YOUR_GEMINI_API_KEY":
-        print("Error: Please set your Gemini API key in config.json")
-        print("Get a free key at: https://aistudio.google.com")
-        sys.exit(1)
+    backend = config.get("llm_backend", "gemini")
+    if backend == "gemini":
+        if not config.get("gemini_api_key") or \
+           config["gemini_api_key"] == "YOUR_GEMINI_API_KEY":
+            print("Error: Please set your Gemini API key in config.json")
+            print("Get a free key at: https://aistudio.google.com")
+            sys.exit(1)
 
     return config
 

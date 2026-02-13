@@ -1,6 +1,9 @@
 {
+    "llm_backend": "gemini",
     "gemini_api_key": "YOUR_GEMINI_API_KEY",
     "gemini_model": "gemini-2.0-flash",
+    "ollama_url": "http://localhost:11434",
+    "ollama_model": "llama3.2:3b",
     "wake_word_model": "hey_jarvis",
     "wake_word_threshold": 0.5,
     "whisper_model": "auto",
