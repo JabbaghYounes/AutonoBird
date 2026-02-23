@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Skippy - A JARVIS-style voice assistant for Raspberry Pi.
+Jarvis - A voice assistant for Raspberry Pi.
 
 Listens for a wake word, transcribes speech with faster-whisper,
 queries Google Gemini Flash for a response, and speaks it using Piper TTS.
 
 Usage:
-    python3 skippy.py
+    python3 jarvis.py
 
 Requires config.json alongside this script. See config.example.json.
 """
@@ -19,6 +19,7 @@ import logging
 import os
 import signal
 import sys
+import urllib.error
 import urllib.request
 import wave
 from pathlib import Path
@@ -42,7 +43,7 @@ import openwakeword
 from openwakeword import Model as OwwModel
 from faster_whisper import WhisperModel
 
-logger = logging.getLogger("skippy")
+logger = logging.getLogger("jarvis")
 
 
 def _open_pyaudio():
@@ -261,7 +262,7 @@ class SpeechRecorder:
         if speech_chunks == 0:
             return None
 
-        wav_path = "/tmp/skippy_input.wav"
+        wav_path = "/tmp/jarvis_input.wav"
         with wave.open(wav_path, "wb") as wf:
             wf.setnchannels(self.CHANNELS)
             wf.setsampwidth(2)
@@ -355,12 +356,65 @@ class OllamaBrain:
     """Local LLM conversation engine via Ollama API."""
 
     def __init__(self, base_url, model_name, system_prompt,
-                 max_history_turns=20):
+                 max_history_turns=20, timeout=120):
         self.base_url = base_url.rstrip("/")
         self.model_name = model_name
         self.system_prompt = system_prompt
         self.max_history_turns = max_history_turns
+        self.timeout = timeout
         self._history = []
+
+    def check_connection(self):
+        """Verify Ollama is running. Raises RuntimeError if not reachable."""
+        try:
+            req = urllib.request.Request(f"{self.base_url}/api/tags")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return json.loads(resp.read())
+        except urllib.error.URLError as e:
+            raise RuntimeError(
+                f"Cannot reach Ollama at {self.base_url}\n"
+                f"  Is Ollama running? Start it with: ollama serve\n"
+                f"  Error: {e}"
+            )
+
+    def ensure_model(self):
+        """Check if the configured model is available, pull it if missing."""
+        data = self.check_connection()
+        available = [m["name"] for m in data.get("models", [])]
+
+        # Match with or without :latest tag
+        found = any(
+            name == self.model_name or name == f"{self.model_name}:latest"
+            or self.model_name == name.split(":")[0]
+            for name in available
+        )
+
+        if found:
+            logger.info(f"Ollama model '{self.model_name}' is available")
+            return
+
+        logger.info(
+            f"Model '{self.model_name}' not found locally, pulling... "
+            f"(this may take a while)"
+        )
+        payload = json.dumps({
+            "name": self.model_name,
+            "stream": False,
+        }).encode()
+        req = urllib.request.Request(
+            f"{self.base_url}/api/pull",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                resp.read()
+            logger.info(f"Model '{self.model_name}' pulled successfully")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to pull model '{self.model_name}': {e}\n"
+                f"  Try manually: ollama pull {self.model_name}"
+            )
 
     def _reset_history(self):
         self._history = []
@@ -379,9 +433,17 @@ class OllamaBrain:
             data=payload,
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            body = json.loads(resp.read())
-        return body["message"]["content"]
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = json.loads(resp.read())
+            return body["message"]["content"]
+        except urllib.error.URLError as e:
+            raise ConnectionError(f"Ollama not reachable: {e}")
+        except TimeoutError:
+            raise TimeoutError(
+                f"Ollama response timed out after {self.timeout}s "
+                f"(model may be too large for this hardware)"
+            )
 
     def ask(self, user_text):
         """Send user message and get response. Handles errors with retry."""
@@ -398,8 +460,9 @@ class OllamaBrain:
             return reply
         except Exception as e:
             logger.error(f"Ollama API error: {e}")
+            # Drop history and retry with just this message
+            self._reset_history()
             try:
-                self._reset_history()
                 messages = [{"role": "user", "content": user_text}]
                 reply = self._call(messages)
                 self._history = [
@@ -417,7 +480,7 @@ def create_brain(config):
     backend = config.get("llm_backend", "gemini")
     system_prompt = config.get(
         "system_prompt",
-        "You are Skippy, a helpful voice assistant. "
+        "You are Jarvis, a helpful voice assistant. "
         "Keep responses to 1-3 sentences."
     )
     max_history = config.get("max_history_turns", 20)
@@ -430,12 +493,15 @@ def create_brain(config):
             max_history_turns=max_history,
         )
     elif backend == "ollama":
-        return OllamaBrain(
+        brain = OllamaBrain(
             base_url=config.get("ollama_url", "http://localhost:11434"),
             model_name=config.get("ollama_model", "llama3.2:3b"),
             system_prompt=system_prompt,
             max_history_turns=max_history,
+            timeout=config.get("ollama_timeout", 120),
         )
+        brain.ensure_model()
+        return brain
     else:
         print(f"Error: Unknown llm_backend '{backend}' in config.json")
         print("Supported backends: gemini, ollama")
@@ -488,8 +554,8 @@ class Speaker:
             logger.error(f"TTS playback error: {e}")
 
 
-class Skippy:
-    """Main orchestrator for the Skippy voice assistant."""
+class Jarvis:
+    """Main orchestrator for the Jarvis voice assistant."""
 
     def __init__(self, config):
         self.config = config
@@ -535,11 +601,11 @@ class Skippy:
         signal.signal(signal.SIGTERM, self._handle_signal)
 
         self.running = True
-        logger.info("Skippy is starting up...")
+        logger.info("Jarvis is starting up...")
 
         self.wake_word.start()
         self.feedback.beep_ready()
-        logger.info("Skippy is ready. Listening for wake word...")
+        logger.info("Jarvis is ready. Listening for wake word...")
 
         try:
             while self.running:
@@ -571,7 +637,7 @@ class Skippy:
 
                 logger.info("Thinking...")
                 response_text = self.brain.ask(user_text)
-                logger.info(f"Skippy says: {response_text}")
+                logger.info(f"Jarvis says: {response_text}")
 
                 logger.info("Speaking...")
                 self.speaker.speak(response_text)
@@ -584,7 +650,7 @@ class Skippy:
             self.feedback.beep_error()
         finally:
             self.wake_word.stop()
-            logger.info("Skippy shut down.")
+            logger.info("Jarvis shut down.")
 
 
 def load_config():
@@ -608,6 +674,15 @@ def load_config():
             print("Error: Please set your Gemini API key in config.json")
             print("Get a free key at: https://aistudio.google.com")
             sys.exit(1)
+    elif backend == "ollama":
+        url = config.get("ollama_url", "http://localhost:11434")
+        try:
+            req = urllib.request.Request(f"{url.rstrip('/')}/api/tags")
+            urllib.request.urlopen(req, timeout=5)
+        except urllib.error.URLError:
+            print(f"Error: Cannot reach Ollama at {url}")
+            print("Make sure Ollama is running: ollama serve")
+            sys.exit(1)
 
     return config
 
@@ -622,8 +697,8 @@ def main():
     logger.info("Loading configuration...")
     config = load_config()
 
-    skippy = Skippy(config)
-    skippy.run()
+    jarvis = Jarvis(config)
+    jarvis.run()
 
 
 if __name__ == "__main__":

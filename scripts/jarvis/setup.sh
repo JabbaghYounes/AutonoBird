@@ -1,19 +1,19 @@
 #!/bin/bash
 #
-# Setup script for Skippy Voice Assistant
+# Setup script for Jarvis Voice Assistant
 # Run this on your Raspberry Pi: sudo bash setup.sh
 #
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVICE_FILE="skippy.service"
+SERVICE_FILE="jarvis.service"
 ACTUAL_USER="${SUDO_USER:-$(whoami)}"
 VOICES_DIR="$SCRIPT_DIR/voices"
 PIPER_VOICE="en_US-lessac-medium"
 PIPER_BASE_URL="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium"
 
-echo "=== Skippy Voice Assistant Setup ==="
+echo "=== Jarvis Voice Assistant Setup ==="
 echo ""
 
 # Check if running as root for service installation
@@ -96,7 +96,7 @@ fi
 # Step 6: Install systemd service
 echo ""
 echo "[6/6] Installing systemd service..."
-chmod +x "$SCRIPT_DIR/skippy.py"
+chmod +x "$SCRIPT_DIR/jarvis.py"
 if [ "$EUID" -eq 0 ]; then
     sed -e "s|INSTALL_DIR|$SCRIPT_DIR|g" \
         -e "s|INSTALL_USER|$ACTUAL_USER|g" \
@@ -126,7 +126,7 @@ echo ""
 echo "Next steps:"
 echo "  1. Edit config.json with your Gemini API key"
 echo "  2. Get a free key at: https://aistudio.google.com"
-echo "  3. Test with: $SCRIPT_DIR/venv/bin/python3 $SCRIPT_DIR/skippy.py"
+echo "  3. Test with: $SCRIPT_DIR/venv/bin/python3 $SCRIPT_DIR/jarvis.py"
 echo "  4. Start service: sudo systemctl start $SERVICE_FILE"
 echo "  5. View logs: journalctl -u $SERVICE_FILE -f"
 echo ""
