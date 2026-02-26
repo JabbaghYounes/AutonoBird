@@ -465,12 +465,13 @@ def split_stereo_frame(frame):
 
 
 def open_camera(index=CAMERA_INDEX):
-    cap = cv2.VideoCapture(index)
+    cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
     if not cap.isOpened():
         print(f"[ERROR] Cannot open camera at index {index}.")
         sys.exit(1)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     time.sleep(1)
     return cap
 

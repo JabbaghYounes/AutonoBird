@@ -97,15 +97,15 @@ def split_stereo_frame(frame):
 
 def open_camera(index=CAMERA_INDEX):
     """Open the stereo camera and return the VideoCapture object."""
-    cap = cv2.VideoCapture(index)
+    cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
     if not cap.isOpened():
         print(f"[ERROR] Cannot open camera at index {index}.")
         print("        Try changing CAMERA_INDEX (0, 1, 2...) or check USB connection.")
         sys.exit(1)
 
-    # Try to set resolution to maximum (the camera may override this)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)  # 1280x2 for side-by-side
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     # Let camera warm up
     time.sleep(1)
