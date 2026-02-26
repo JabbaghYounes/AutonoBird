@@ -2,3 +2,4 @@ config.json
 venv/
 voices/
 __pycache__/
+CLAUDE.md
