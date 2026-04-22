@@ -10,7 +10,7 @@ Summary of the AutonoBird hardware stack. For the full flight-controller build l
 | Flight controller | Pixhawk 6C Mini | Ships with the kit; runs ArduPilot |
 | Motors / ESCs / PDB | HolyBro kit stock | — |
 | Companion computer | Raspberry Pi 5 (8 GB) | Powered via USB-C from UBEC |
-| AI accelerator | HAILO AI HAT+ (Hailo-8, 26 TOPS) | Deferred for software development phase |
+| AI accelerator | Raspberry Pi AI HAT+ (26 TOPS, Hailo-8) | Primary candidate. Alternative: AI HAT+ 2 (40 TOPS, Hailo-10H). Selection is being determined empirically by the [Benchy](https://github.com/JabbaghYounes/Benchy) edge-AI benchmark suite. Deferred for software development phase |
 | Stereo camera | AR0144 USB global-shutter (2560×720 SBS) | Replaces original Arducam IMX519 quad-camera plan |
 | GPS | HolyBro M10 (with compass) | On a printed mast |
 | RC receiver | RadioMaster RP4TD (ExpressLRS) | CRSF protocol, connected to GPS2 port |
