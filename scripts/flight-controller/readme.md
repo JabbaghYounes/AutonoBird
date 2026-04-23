@@ -96,22 +96,88 @@ Printed vertical antenna mounts (RP4TD Folding TPU Antenna Holders, designer-rec
 
 ## ArduPilot parameters
 
-The Pixhawk firmware is ArduPilot (not PX4). Parameters to set via Mission Planner (or QGroundControl) before first flight:
+The Pixhawk firmware is ArduCopter 4.6.3 (ChibiOS, pixhawk6C non-bdshot target). Parameters below are the full set configured during Stage 2 bench validation.
 
+**Frame + orientation:**
 ```
-# ELRS receiver on GPS2 (SERIAL4 / UART8) — CRSF protocol
-SERIAL4_PROTOCOL = 23
-SERIAL4_BAUD     = 460800
-RSSI_TYPE        = 5
-
-# OSD on TELEM2 — MAVLink for telemetry overlay
-SERIAL2_PROTOCOL = 2
-SERIAL2_BAUD     = 57
-
-# TELEM1 (SiK telemetry) defaults are correct — no change needed
+FRAME_CLASS      = 1       # Quad
+FRAME_TYPE       = 1       # X
+AHRS_ORIENTATION = 0       # Forward (Pixhawk arrow forward)
 ```
 
-Verify `AHRS_ORIENTATION = 0` (arrow forward) — Pixhawk was mounted arrow-forward, so default is correct.
+**Serial ports** (mapping: SERIAL1=TELEM1, SERIAL2=TELEM2, SERIAL3=GPS1, SERIAL4=GPS2):
+```
+# SiK telemetry on TELEM1 — defaults correct (MAVLink2 @ 57600), no change
+
+# OSD on TELEM2
+SERIAL2_PROTOCOL = 2       # MAVLink2
+SERIAL2_BAUD     = 57      # 57600 baud
+
+# M10 GPS on GPS1 — defaults correct
+
+# ExpressLRS RP4TD on GPS2 (repurposed as RCIN)
+SERIAL4_PROTOCOL = 23      # RCIN
+SERIAL4_BAUD     = 420     # 420000 baud — ELRS receiver default
+RSSI_TYPE        = 5       # CRSF
+```
+
+**Battery monitor (HolyBro PM on POWER1):**
+```
+BATT_MONITOR     = 4       # Analog Voltage and Current (requires reboot for PIN params to appear)
+BATT_VOLT_PIN    = 10
+BATT_CURR_PIN    = 11
+BATT_VOLT_MULT   = 18.182
+BATT_AMP_PERVLT  = 36.364
+BATT_CAPACITY    = 1500    # mAh (CNHL 4S 1500)
+```
+
+**Battery failsafe:**
+```
+BATT_LOW_VOLT    = 14.0    # 4 × 3.50 V
+BATT_CRT_VOLT    = 13.2    # 4 × 3.30 V
+BATT_LOW_TIMER   = 10      # s
+BATT_FS_LOW_ACT  = 1       # Land
+BATT_FS_CRT_ACT  = 1       # Land
+```
+
+**GCS failsafe** (disabled for bench work; re-enable before flight):
+```
+FS_GCS_ENABLE    = 0
+```
+
+**ESC / motor output:**
+```
+MOT_PWM_TYPE     = 6       # DShot600 (required for BLHeli_S passthrough + DShot direction commands)
+SERVO_BLH_AUTO   = 1       # Auto-enable BLHeli passthrough on outputs 1–4
+SERVO_BLH_RVMASK = 15      # Reverse all four motors (bits 0..3) — HolyBro 4-in-1 ships all motors inverted relative to X-quad expectation
+```
+
+**Safety switch:**
+```
+BRD_SAFETY_DEFLT = 0       # Boot with safety disabled — skip the press-and-hold on the M10 safety button for bench work
+```
+
+## Stage 2 bench validation progress (as of 2026-04-23)
+
+Hardware build complete 2026-04-22. Firmware bring-up in progress:
+
+- [x] ArduCopter 4.6.3 flashed
+- [x] Parameter set above loaded
+- [x] Accelerometer calibration (6-position)
+- [x] Compass calibration (external M10 primary, internal disabled)
+- [x] Battery + GCS failsafes (partial; RC/throttle failsafe blocked on ELRS bind)
+- [ ] ELRS bind — **blocked**. RP4TD firmware 3.3.1. Suspect Pocket/RP4TD firmware major-minor mismatch (Pocket version unverified). UID `212,50,59,163,20,74` already matches the racing drone bound to the Pocket.
+- [ ] Motor direction verification — `SERVO_BLH_RVMASK=15` applied, reboot done, motor test pending
+- [ ] Video feed (VTX + OSD end-to-end via Eachine goggles)
+- [ ] Arm test
+
+## ESC firmware note
+
+The HolyBro QUAV250 kit ships with **BLHeli_S 20A 4-in-1** ESCs (SiLabs BB21, A_H_30 target, firmware 16.7), **not** BLHeli_32. This matters:
+
+- `BLHeliSuite32` cannot talk to these ESCs — it will show `No ESC found` even when ArduPilot passthrough negotiates successfully.
+- For direct ESC configuration, use classic `BLHeliSuite` (Wine on Linux) or the MAVProxy `blheli` module.
+- For the specific job of reversing motor direction, ArduPilot's native `SERVO_BLH_RVMASK` sends DShot direction commands directly — no external tool needed.
 
 ## ExpressLRS binding
 
