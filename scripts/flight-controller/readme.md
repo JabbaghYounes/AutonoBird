@@ -25,7 +25,7 @@ There is no code in this subsystem yet. Future MAVLink bridge / companion-comput
 | TELEM1 | SiK 433 MHz 100 mW telemetry radio      | SERIAL1          | Default MAVLink2 @ 57600, no config change needed |
 | TELEM2 | HolyBro Micro OSD V2 (serial side)      | SERIAL2          | `SERIAL2_PROTOCOL=2`, `SERIAL2_BAUD=57` for MAVLink OSD |
 | GPS1   | HolyBro M10 GPS                         | SERIAL3          | GPS default, no config change |
-| GPS2   | RadioMaster RP4TD ELRS receiver (CRSF)  | SERIAL4 / UART8  | `SERIAL4_PROTOCOL=23` (RCIN), `SERIAL4_BAUD=460800`. `RSSI_TYPE=5` for CRSF RSSI |
+| GPS2   | RadioMaster RP4TD ELRS receiver (CRSF)  | SERIAL4 / UART8  | `SERIAL4_PROTOCOL=23` (RCIN), `SERIAL4_BAUD=420000` (ELRS default; initially 460800, corrected after reading RP4TD UART config). `RSSI_TYPE=5` for CRSF RSSI |
 | RC IN (PPM/SBUS) | **unused** | —              | The 6C Mini's RC IN port supports PPM/SBUS only, not CRSF — so an ELRS receiver cannot be connected here |
 
 ## Key wiring decisions
@@ -145,31 +145,59 @@ BATT_FS_CRT_ACT  = 1       # Land
 FS_GCS_ENABLE    = 0
 ```
 
-**ESC / motor output:**
+**Compass (external IST8310 on M10 GPS, internal IST8310 disabled):**
 ```
-MOT_PWM_TYPE     = 6       # DShot600 (required for BLHeli_S passthrough + DShot direction commands)
-SERVO_BLH_AUTO   = 1       # Auto-enable BLHeli passthrough on outputs 1–4
-SERVO_BLH_RVMASK = 15      # Reverse all four motors (bits 0..3) — HolyBro 4-in-1 ships all motors inverted relative to X-quad expectation
+COMPASS_USE       = 1         # Use external compass
+COMPASS_USE2      = 0         # Disable internal (sits next to FC current traces, bad cal environment)
+COMPASS_USE3      = 0         # Third slot empty
+COMPASS_PRIO1_ID  = 658953    # DEV_ID of the external M10 IST8310
+COMPASS_ORIENT    = 4         # YAW_270 (auto-detected during on-board cal)
+COMPASS_OFS_X     = -2        # Offsets from 2026-04-24 indoor cal; magnitude ~40 mGauss (clean)
+COMPASS_OFS_Y     = 20
+COMPASS_OFS_Z     = -35
 ```
+
+> **Outdoor re-cal planned before first flight.** The 2026-04-24 cal was done indoors and came back yellow on the quality indicator. The offset magnitudes themselves are clean; the yellow reflects sample distribution of a quick indoor spin. An outdoor re-cal on grass, away from rebar and cars, will likely land it green.
+
+**ESC / motor output — PWM mode (see history below):**
+```
+MOT_PWM_TYPE     = 0       # Normal PWM 400 Hz (changed from 6 / DShot600 after BLHeli handshake lockout)
+SERVO_BLH_AUTO   = 0       # Disabled — BLHeli passthrough no longer in use
+SERVO_BLH_RVMASK = 0       # Disabled — motor direction corrected physically instead
+```
+
+> **Why PWM and not DShot600.** During Stage 2 bench bring-up on 2026-04-24, setting `SERVO_BLH_RVMASK=15` + `SERVO_BLH_AUTO=1` initiated a DShot direction-reverse handshake with each ESC. The handshake did not complete cleanly (suspected EMI from a momentarily flaky PM02 voltage-sense cable). After reverting `RVMASK=0` / `AUTO=0`, the four ESCs remained stuck waiting for handshake completion and refused all throttle commands in DShot600 mode — silent motors, BLHeli_S "no valid signal" beep pattern (one long + three short, repeating). Switching `MOT_PWM_TYPE` 6 → 0 after a full LiPo power-cycle let the ESCs re-autodetect the signal as PWM and resume normal throttle response. DShot restoration requires a classic BLHeliSuite (Wine) factory reset of all four ESCs; deferred until after first flight. PWM at 400 Hz is flight-adequate for the dissertation envelope — the only losses are DShot telemetry and a small latency margin, no flight-critical functionality.
+
+> **Motor direction: physical phase swap, not RVMASK.** All four motors shipped factory-defaulted to the opposite rotation of ArduCopter's X-quad expectation. Direction was corrected by swapping any 2 of 3 phase wires at the motor bullet connectors on each motor, with the LiPo fully disconnected. After the swap, all four motors spin correctly: A (FR) CCW, B (BL) CCW, C (FL) CW, D (BR) CW. Motor mapping itself (A=FR, B=BL, C=FL, D=BR) is correct — only rotation was inverted.
 
 **Safety switch:**
 ```
 BRD_SAFETY_DEFLT = 0       # Boot with safety disabled — skip the press-and-hold on the M10 safety button for bench work
 ```
 
-## Stage 2 bench validation progress (as of 2026-04-23)
+## Stage 2 bench validation progress (as of 2026-04-24)
 
 Hardware build complete 2026-04-22. Firmware bring-up in progress:
 
-- [x] ArduCopter 4.6.3 flashed
-- [x] Parameter set above loaded
-- [x] Accelerometer calibration (6-position)
-- [x] Compass calibration (external M10 primary, internal disabled)
+- [x] ArduCopter 4.6.3 flashed (2026-04-23)
+- [x] Parameter set above loaded (2026-04-23; audited and re-verified persistent on 2026-04-24 after several defaults had drifted back — likely from the 2026-04-23 session's edits not fully flushing to flash before power-down)
+- [x] Accelerometer calibration (6-position, 2026-04-23)
+- [x] Compass calibration (external M10 primary; internal disabled. Recalibrated 2026-04-24 after offsets were lost between sessions — see note in Compass params above)
 - [x] Battery + GCS failsafes (partial; RC/throttle failsafe blocked on ELRS bind)
-- [ ] ELRS bind — **blocked**. RP4TD firmware 3.3.1. Suspect Pocket/RP4TD firmware major-minor mismatch (Pocket version unverified). UID `212,50,59,163,20,74` already matches the racing drone bound to the Pocket.
-- [ ] Motor direction verification — `SERVO_BLH_RVMASK=15` applied, reboot done, motor test pending
+- [x] Motor direction — corrected via physical phase-wire swap on all four motors 2026-04-24 (LiPo disconnected, any 2 of 3 phase bullets swapped per motor). Verified in PWM motor test: A (FR) CCW, B (BL) CCW, C (FL) CW, D (BR) CW.
+- [x] End-to-end motor test validated at `BATT_MONITOR=4` with no bypass — all six core Stage 2 params persistent through reboot, motors spin cleanly in PWM mode.
+- [ ] ELRS bind — **blocked**. RP4TD firmware 3.3.1. Suspect Pocket/RP4TD firmware major-minor mismatch (Pocket version unverified). UID `212,50,59,163,20,74` already matches the racing drone bound to the Pocket. Next step: check Pocket's ELRS version via its Tools → ExpressLRS Lua script; flash whichever side is older.
+- [ ] RC / throttle failsafe + flight mode assignments — blocked on ELRS bind
 - [ ] Video feed (VTX + OSD end-to-end via Eachine goggles)
 - [ ] Arm test
+- [ ] PM02 voltage-sense cable visual inspection — intermittent contact triggered phantom `Battery 1 missing` failsafes on every motor-test attempt during Stage 2, before appearing to stabilise after the airframe was handled during the motor phase-swap. Wants inspection + wiggle-test + spare-cable swap available before first flight.
+- [ ] DShot600 restoration via BLHeliSuite (Wine) factory reset of all four ESCs — deferred, not blocking first flight
+
+### Parameter backups saved during Stage 2 (in `resources/`, gitignored)
+
+- `autonobird-stage2-<date>.params` — post-audit snapshot (pre-BLHeli-revert)
+- `autonobird-stage2-post-blheli-revert.params` — after `SERVO_BLH_RVMASK=0` / `SERVO_BLH_AUTO=0`
+- `autonobird-stage2-motors-fixed.params` — **current golden baseline**, PWM mode, motors verified correct direction end-to-end
 
 ## ESC firmware note
 
@@ -177,7 +205,8 @@ The HolyBro QUAV250 kit ships with **BLHeli_S 20A 4-in-1** ESCs (SiLabs BB21, A_
 
 - `BLHeliSuite32` cannot talk to these ESCs — it will show `No ESC found` even when ArduPilot passthrough negotiates successfully.
 - For direct ESC configuration, use classic `BLHeliSuite` (Wine on Linux) or the MAVProxy `blheli` module.
-- For the specific job of reversing motor direction, ArduPilot's native `SERVO_BLH_RVMASK` sends DShot direction commands directly — no external tool needed.
+- ArduPilot's `SERVO_BLH_RVMASK` DShot direction command **failed on this build** (Stage 2 bench, 2026-04-24): the reverse handshake did not complete cleanly and left all four ESCs stuck waiting for handshake completion, refusing all throttle commands in DShot600 mode. Suspected EMI contamination during the handshake from a flaky PM02 voltage-sense cable, but not root-caused. Recovery required reverting the BLHeli params *and* switching `MOT_PWM_TYPE` to `0` (Normal PWM 400 Hz) to let the ESCs re-autodetect the signal protocol. Motor direction was then corrected by **physical phase-wire swap** at the motor bullet connectors instead.
+- Recommendation for this build: prefer the physical phase-swap for direction reversal — it is deterministic and does not depend on a fragile DShot handshake. `SERVO_BLH_RVMASK` may still be safe on a future build with cleaner power-sense wiring, but validate on the bench before committing.
 
 ## ExpressLRS binding
 
