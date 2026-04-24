@@ -175,29 +175,52 @@ SERVO_BLH_RVMASK = 0       # Disabled — motor direction corrected physically i
 BRD_SAFETY_DEFLT = 0       # Boot with safety disabled — skip the press-and-hold on the M10 safety button for bench work
 ```
 
-## Stage 2 bench validation progress (as of 2026-04-24)
+**Flight modes (SB 3-pos switch → CH6):**
+```
+FLTMODE_CH       = 6       # Mode channel (SB 3-pos mapped to CH6 on Pocket)
+FLTMODE1         = 0       # Stabilize  (SB up,    PWM ≤ 1230)
+FLTMODE4         = 2       # AltHold    (SB center, PWM 1491–1620 — centered 3-pos outputs ~1500 µs)
+FLTMODE6         = 6       # RTL        (SB down,  PWM ≥ 1750)
+# FLTMODE2/3/5 stay default — unreachable with this switch
+```
 
-Hardware build complete 2026-04-22. Firmware bring-up in progress:
+> **FLTMODE3 vs FLTMODE4 gotcha.** ArduPilot maps flight-mode channel PWM to mode slots as: FLTMODE1 ≤1230, FLTMODE2 1231–1360, **FLTMODE3 1361–1490**, **FLTMODE4 1491–1620**, FLTMODE5 1621–1749, FLTMODE6 ≥1750. A centered 3-pos switch outputs ~1500 µs, which falls in FLTMODE4, not FLTMODE3. Always put the middle-position mode in `FLTMODE4` when using a single 3-pos switch.
+
+**RC / throttle failsafe:**
+```
+FS_THR_ENABLE    = 1       # RTL on throttle failsafe (receiver enters failsafe when TX signal lost)
+FS_THR_VALUE     = 975     # Trigger PWM threshold on CH3 — below this = failsafe
+```
+
+RP4TD failsafe position is not explicitly configured on the Pocket side; the RX defaults to "no pulses" when TX signal is lost, which causes ArduPilot to see CH3 drop below `FS_THR_VALUE` and trigger `FS_THR`. This is the standard ELRS + ArduPilot config — do not configure failsafe positions in the RX unless you have a specific reason.
+
+## Stage 2 bench validation progress (closed 2026-04-24)
+
+Hardware build complete 2026-04-22. Stage 2 firmware bring-up closed 2026-04-24:
 
 - [x] ArduCopter 4.6.3 flashed (2026-04-23)
 - [x] Parameter set above loaded (2026-04-23; audited and re-verified persistent on 2026-04-24 after several defaults had drifted back — likely from the 2026-04-23 session's edits not fully flushing to flash before power-down)
 - [x] Accelerometer calibration (6-position, 2026-04-23)
 - [x] Compass calibration (external M10 primary; internal disabled. Recalibrated 2026-04-24 after offsets were lost between sessions — see note in Compass params above)
-- [x] Battery + GCS failsafes (partial; RC/throttle failsafe blocked on ELRS bind)
+- [x] Battery + GCS failsafes
 - [x] Motor direction — corrected via physical phase-wire swap on all four motors 2026-04-24 (LiPo disconnected, any 2 of 3 phase bullets swapped per motor). Verified in PWM motor test: A (FR) CCW, B (BL) CCW, C (FL) CW, D (BR) CW.
 - [x] End-to-end motor test validated at `BATT_MONITOR=4` with no bypass — all six core Stage 2 params persistent through reboot, motors spin cleanly in PWM mode.
-- [ ] ELRS bind — **blocked**. RP4TD firmware 3.3.1. Suspect Pocket/RP4TD firmware major-minor mismatch (Pocket version unverified). UID `212,50,59,163,20,74` already matches the racing drone bound to the Pocket. Next step: check Pocket's ELRS version via its Tools → ExpressLRS Lua script; flash whichever side is older.
-- [ ] RC / throttle failsafe + flight mode assignments — blocked on ELRS bind
-- [ ] Video feed (VTX + OSD end-to-end via Eachine goggles)
-- [ ] Arm test
-- [ ] PM02 voltage-sense cable visual inspection — intermittent contact triggered phantom `Battery 1 missing` failsafes on every motor-test attempt during Stage 2, before appearing to stabilise after the airframe was handled during the motor phase-swap. Wants inspection + wiggle-test + spare-cable swap available before first flight.
-- [ ] DShot600 restoration via BLHeliSuite (Wine) factory reset of all four ESCs — deferred, not blocking first flight
+- [x] ELRS bind — RP4TD + Pocket both on ExpressLRS 3.3.1 (version mismatch theory was wrong). Real blocker was that the Pocket's factory "pocket" model had Internal RF off. Fix: copied the factory pocket model (which ships with CH1–CH8 pre-wired correctly to sticks + SA/SB/SC/right-trigger), set Internal RF = CRSF 5.25M / 500 Hz / channels 1-16, 3x LiPo power-cycle on the drone to put RP4TD into bind mode, pressed Bind in the Pocket's ELRS Lua script. Link comes up solid blue on the RP4TD within 1 s. Binding phrases blank on both sides (factory).
+- [x] Radio calibration in QGC (sticks + switches mapped, channel monitor all live)
+- [x] RC / throttle failsafe (`FS_THR_ENABLE=1`, `FS_THR_VALUE=975`)
+- [x] Flight mode assignments (CH6 / SB 3-pos → Stabilize / AltHold / RTL via `FLTMODE1` / `FLTMODE4` / `FLTMODE6`)
+- [x] PM02 voltage-sense cable visual inspection — 6-pin JST-GH latched firmly at both ends, no bent pins or damaged insulation. Cleared for flight.
+- [ ] Video feed (VTX + OSD end-to-end via Eachine goggles) — defer to Day 3 pre-flight
+- [ ] Arm test — defer to Day 3, outdoor, after re-cal
+- [ ] Outdoor compass re-cal on grass, away from rebar/cars — bench cal was indoor-yellow, outdoor expected green
+- [ ] DShot600 restoration via classic BLHeliSuite (Wine) factory reset of all four ESCs — deferred, not blocking first flight
 
 ### Parameter backups saved during Stage 2 (in `resources/`, gitignored)
 
-- `autonobird-stage2-<date>.params` — post-audit snapshot (pre-BLHeli-revert)
+- `autonobird-stage2-<date>.params` — early-session audit snapshot (pre-BLHeli-revert)
 - `autonobird-stage2-post-blheli-revert.params` — after `SERVO_BLH_RVMASK=0` / `SERVO_BLH_AUTO=0`
-- `autonobird-stage2-motors-fixed.params` — **current golden baseline**, PWM mode, motors verified correct direction end-to-end
+- `autonobird-stage2-motors-fixed.params` — PWM mode, motors verified correct direction
+- `autonobird-stage2-elrs-ready.params` — **current golden baseline**, adds ELRS-bound RC config, CH6 flight-mode selector, and throttle failsafe on top of the motors-fixed snapshot
 
 ## ESC firmware note
 
@@ -208,13 +231,32 @@ The HolyBro QUAV250 kit ships with **BLHeli_S 20A 4-in-1** ESCs (SiLabs BB21, A_
 - ArduPilot's `SERVO_BLH_RVMASK` DShot direction command **failed on this build** (Stage 2 bench, 2026-04-24): the reverse handshake did not complete cleanly and left all four ESCs stuck waiting for handshake completion, refusing all throttle commands in DShot600 mode. Suspected EMI contamination during the handshake from a flaky PM02 voltage-sense cable, but not root-caused. Recovery required reverting the BLHeli params *and* switching `MOT_PWM_TYPE` to `0` (Normal PWM 400 Hz) to let the ESCs re-autodetect the signal protocol. Motor direction was then corrected by **physical phase-wire swap** at the motor bullet connectors instead.
 - Recommendation for this build: prefer the physical phase-swap for direction reversal — it is deterministic and does not depend on a fragile DShot handshake. `SERVO_BLH_RVMASK` may still be safe on a future build with cleaner power-sense wiring, but validate on the bench before committing.
 
-## ExpressLRS binding
+## ExpressLRS binding (as actually performed 2026-04-24)
 
-The RP4TD receiver must be bound to the RadioMaster Pocket transmitter before RC input works:
+Both ends shipped on ExpressLRS 3.3.1 with blank binding phrases. The bind procedure that worked:
 
-1. Flash both ends to a matching ExpressLRS firmware version using the ExpressLRS Configurator.
-2. Set a matching binding phrase on both ends.
-3. Power-cycle both; receiver LED should go from blinking yellow to solid.
+1. **Confirm versions match.** On the Pocket: System → Tools → ExpressLRS → Version String (should read 3.3.1). RP4TD firmware 3.3.1 is the factory build. If versions differ, flash the older side via ExpressLRS Configurator.
+2. **Confirm the Pocket's active model has Internal RF = CRSF.** The factory "pocket" model has all stick/switch mixes pre-wired on CH1–CH8 but ships with Internal RF OFF. Either modify the active model to set Internal RF = CRSF (5.25M / 500 Hz / channels 1-16), or copy the factory pocket model to a new slot (e.g. `qav250`) and enable CRSF there. The Pocket main screen will show an RF/antenna indicator when transmitting.
+3. **Put the RP4TD into bind mode.** With the Pocket powered on, do a rapid 3x power-cycle on the drone: plug LiPo → unplug → plug → unplug → plug, each cycle under ~1 s, leaving it powered on the 3rd plug. The RP4TD LED should switch from slow yellow flash (searching) to fast double-blink (bind mode). If it stays slow-flashing, the power-cycle timing was not fast enough — try again.
+4. **Trigger bind from the Pocket.** System → Tools → ExpressLRS → Bind. The RP4TD should go from fast double-blink to solid blue within ~1 s, and the Pocket's Lua screen starts showing RSSI/LQ telemetry.
+5. **Verify in QGC.** Vehicle Setup → Radio → channel monitor should show CH1–CH4 responding to sticks and CH5–CH8 responding to switches. Red dot on the Radio tab goes green. Run Calibrate to set `RC*_MIN` / `RC*_MAX` endpoints.
+
+### Pocket switch → channel map (factory model)
+
+The factory `pocket` model wires its limited physical controls to CH5–CH8:
+
+| Pocket control      | EdgeTX source | Output channel | Positions         |
+|---------------------|---------------|----------------|-------------------|
+| Left trigger        | SA            | CH5            | 2-pos (-100 / +100) |
+| Top 3-pos switch    | SB            | **CH6**        | 3-pos (-100 / 0 / +100) — **flight-mode selector** |
+| Other 3-pos switch  | SC            | CH7            | 3-pos             |
+| Right trigger       | (2-pos)       | CH8            | 2-pos             |
+
+The Pocket has no TX16S-style toggle switches; all mode selection has to come from the two 3-pos switches. Either is usable as the flight-mode channel — this build uses SB/CH6.
+
+### Model Match gotcha
+
+If `Model Match` is ON in the Pocket's ELRS Lua script, each EdgeTX model needs its own bind; switching models breaks the link until re-bound. For a single-vehicle build, leave Model Match OFF so the RX links to any active model with CRSF enabled.
 
 ## Pre-flight checklist
 
