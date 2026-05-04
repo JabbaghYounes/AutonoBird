@@ -46,14 +46,16 @@ import time
 # =============================================================================
 
 # Checkerboard inner corners (columns x rows of INNER corners, not squares)
-# For example, an 8x6 grid of squares has 7x5 inner corners.
+# For example, a 10x7 grid of squares has 9x6 inner corners.
 # Count the internal corners on YOUR printout and set these values.
-CHECKERBOARD_COLS = 7   # inner corners horizontally
-CHECKERBOARD_ROWS = 5   # inner corners vertically
+CHECKERBOARD_COLS = 9   # inner corners horizontally
+CHECKERBOARD_ROWS = 6   # inner corners vertically
 CHECKERBOARD = (CHECKERBOARD_COLS, CHECKERBOARD_ROWS)
 
-# Size of each square in millimeters — MEASURE THIS on your actual printout
-SQUARE_SIZE_MM = 30.0
+# Size of each square in millimeters — MEASURE THIS on your actual printout.
+# Reference values: A2 50mm board=50.0, A3 40mm board=40.0,
+# A3-design auto-scaled-to-A4 (printer "fit to page")=25.0.
+SQUARE_SIZE_MM = 26.0
 
 # Camera device index (usually 0 for the first USB camera)
 CAMERA_INDEX = 0
@@ -63,6 +65,7 @@ NUM_PAIRS = 20
 
 # Folder to save calibration images and results
 CALIB_DIR = "stereo_calibration_data"
+SESSIONS_DIR = os.path.join(CALIB_DIR, "sessions")
 CALIB_FILE = os.path.join(CALIB_DIR, "stereo_calibration.npz")
 
 # Baseline in meters (fixed for your module)
@@ -81,6 +84,68 @@ SGBM_P2 = 32 * 3 * SGBM_BLOCK_SIZE ** 2
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
+
+
+def make_session_dir(name=None):
+    """Create or reuse a session folder. Returns (path, label, existing_pair_count)."""
+    if name is None or name.strip() == "":
+        name = time.strftime("%Y%m%d-%H%M%S")
+    path = os.path.join(SESSIONS_DIR, name)
+    os.makedirs(path, exist_ok=True)
+    existing = sorted(glob.glob(os.path.join(path, "left_*.png")))
+    return path, name, len(existing)
+
+
+def collect_capture_pairs(session=None, latest=False):
+    """
+    Return ([(left_path, right_path), ...], {source_label: count}).
+
+      session=None, latest=False  -> all sessions + legacy loose files (default)
+      session="a,b"               -> only those named sessions
+      latest=True                 -> only the most recent session by mtime
+    """
+    pairs = []
+    counts = {}
+
+    def add_dir(dirpath, label):
+        lefts = sorted(glob.glob(os.path.join(dirpath, "left_*.png")))
+        rights = sorted(glob.glob(os.path.join(dirpath, "right_*.png")))
+        n = min(len(lefts), len(rights))
+        for i in range(n):
+            pairs.append((lefts[i], rights[i]))
+        if n > 0:
+            counts[label] = n
+
+    if session:
+        for name in [s.strip() for s in session.split(",") if s.strip()]:
+            spath = os.path.join(SESSIONS_DIR, name)
+            if not os.path.isdir(spath):
+                print(f"[WARN] Session not found: {name}")
+                continue
+            add_dir(spath, f"sessions/{name}")
+        return pairs, counts
+
+    if latest:
+        if not os.path.isdir(SESSIONS_DIR):
+            return pairs, counts
+        candidates = [
+            os.path.join(SESSIONS_DIR, d)
+            for d in os.listdir(SESSIONS_DIR)
+            if os.path.isdir(os.path.join(SESSIONS_DIR, d))
+        ]
+        if not candidates:
+            return pairs, counts
+        newest = max(candidates, key=os.path.getmtime)
+        add_dir(newest, f"sessions/{os.path.basename(newest)}")
+        return pairs, counts
+
+    if os.path.isdir(SESSIONS_DIR):
+        for d in sorted(os.listdir(SESSIONS_DIR)):
+            spath = os.path.join(SESSIONS_DIR, d)
+            if os.path.isdir(spath):
+                add_dir(spath, f"sessions/{d}")
+    add_dir(CALIB_DIR, "(legacy loose files)")
+    return pairs, counts
 
 
 def split_stereo_frame(frame):
@@ -116,17 +181,26 @@ def open_camera(index=CAMERA_INDEX):
 # STEP 1: CAPTURE STEREO IMAGE PAIRS
 # =============================================================================
 
-def capture_pairs():
+def capture_pairs(session_name=None):
     """
     Opens the stereo camera, displays a live preview, and lets you
     press SPACE to save a stereo pair when the checkerboard is visible.
     Press Q to quit early.
+
+    Each capture run writes to its own folder under stereo_calibration_data/sessions/
+    so multiple sessions accumulate without overwriting. If session_name matches an
+    existing session, capture resumes there (numbering continues past existing pairs).
     """
     print("=" * 60)
     print("STEP 1: CAPTURE STEREO PAIRS")
     print("=" * 60)
+    session_path, session_label, existing_count = make_session_dir(session_name)
+    print(f"Session: {session_label}")
+    print(f"Folder:  {session_path}")
+    if existing_count > 0:
+        print(f"Resuming — {existing_count} pair(s) already in this session.")
     print(f"Target: {NUM_PAIRS} pairs")
-    print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners")
+    print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners, {SQUARE_SIZE_MM} mm squares")
     print()
     print("Instructions:")
     print("  - Hold the checkerboard in front of the camera")
@@ -135,16 +209,8 @@ def capture_pairs():
     print("  - Press Q when done (or after enough pairs captured)")
     print()
 
-    ensure_dir(CALIB_DIR)
     cap = open_camera()
-
-    pair_count = 0
-    # Check for existing pairs to continue from where we left off
-    existing = glob.glob(os.path.join(CALIB_DIR, "left_*.png"))
-    if existing:
-        pair_count = len(existing)
-        print(f"Found {pair_count} existing pairs. Continuing from pair #{pair_count + 1}.")
-        print()
+    pair_count = existing_count
 
     while pair_count < NUM_PAIRS:
         ret, frame = cap.read()
@@ -196,8 +262,8 @@ def capture_pairs():
         elif key == ord(' '):
             if foundL and foundR:
                 idx = pair_count + 1
-                lpath = os.path.join(CALIB_DIR, f"left_{idx:03d}.png")
-                rpath = os.path.join(CALIB_DIR, f"right_{idx:03d}.png")
+                lpath = os.path.join(session_path, f"left_{idx:03d}.png")
+                rpath = os.path.join(session_path, f"right_{idx:03d}.png")
                 cv2.imwrite(lpath, left)
                 cv2.imwrite(rpath, right)
                 pair_count += 1
@@ -207,7 +273,7 @@ def capture_pairs():
 
     cap.release()
     cv2.destroyAllWindows()
-    print(f"\nCapture complete. {pair_count} pairs saved in '{CALIB_DIR}/'.")
+    print(f"\nCapture complete. {pair_count} pairs in '{session_path}/'.")
     return pair_count > 0
 
 
@@ -215,7 +281,7 @@ def capture_pairs():
 # STEP 2: STEREO CALIBRATION
 # =============================================================================
 
-def calibrate():
+def calibrate(session=None, latest=False):
     """
     Runs stereo calibration on the captured image pairs.
     Saves all calibration matrices to a .npz file for reuse.
@@ -224,18 +290,21 @@ def calibrate():
     print("STEP 2: STEREO CALIBRATION")
     print("=" * 60)
 
-    left_images = sorted(glob.glob(os.path.join(CALIB_DIR, "left_*.png")))
-    right_images = sorted(glob.glob(os.path.join(CALIB_DIR, "right_*.png")))
+    pairs, counts = collect_capture_pairs(session=session, latest=latest)
 
-    if len(left_images) == 0:
-        print("[ERROR] No calibration images found. Run 'capture' first.")
+    if not pairs:
+        print("[ERROR] No calibration images found.")
+        if session:
+            print(f"        Looked in sessions: {session}")
+        elif latest:
+            print(f"        No sessions found in {SESSIONS_DIR}")
+        else:
+            print("        Run 'capture' first.")
         return False
 
-    if len(left_images) != len(right_images):
-        print(f"[ERROR] Mismatched pairs: {len(left_images)} left, {len(right_images)} right.")
-        return False
-
-    print(f"Found {len(left_images)} stereo pairs.")
+    print(f"Found {len(pairs)} stereo pair(s) across:")
+    for src, n in counts.items():
+        print(f"  - {src}: {n}")
     print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners")
     print(f"Square size: {SQUARE_SIZE_MM} mm")
     print()
@@ -253,7 +322,7 @@ def calibrate():
     img_size = None
     used_pairs = 0
 
-    for i, (lpath, rpath) in enumerate(zip(left_images, right_images)):
+    for i, (lpath, rpath) in enumerate(pairs):
         imgL = cv2.imread(lpath)
         imgR = cv2.imread(rpath)
         grayL = cv2.cvtColor(imgL, cv2.COLOR_BGR2GRAY)
@@ -517,13 +586,22 @@ Waveshare AR0144 Stereo Camera — Calibration & Depth Tool
 ==========================================================
 
 Usage:
-    python stereo_calibration.py <command>
+    python basic_calibration.py <command> [options]
 
 Commands:
     capture     Capture stereo checkerboard image pairs
     calibrate   Run stereo calibration on captured pairs
     depth       Live depth viewer (requires calibration)
     all         Run full pipeline: capture → calibrate → depth
+
+Options:
+    --session-name NAME   capture: write into stereo_calibration_data/sessions/NAME/
+                          (default: timestamp). Re-using a name resumes that session.
+    --session A[,B,...]   calibrate: only use these named sessions.
+    --latest              calibrate: only use the most recent session by mtime.
+
+Default calibrate behavior combines ALL sessions (plus any legacy loose
+left_*.png in stereo_calibration_data/).
 
 Workflow:
     1. Print a checkerboard, mount it on something rigid
@@ -549,26 +627,48 @@ Configuration:
     ))
 
 
+def parse_args(argv):
+    """Parse CLI args. Returns (cmd, opts)."""
+    cmd = argv[0].lower() if argv else None
+    opts = {"session_name": None, "session": None, "latest": False}
+    i = 1
+    while i < len(argv):
+        a = argv[i]
+        if a == "--session-name" and i + 1 < len(argv):
+            opts["session_name"] = argv[i + 1]
+            i += 2
+        elif a == "--session" and i + 1 < len(argv):
+            opts["session"] = argv[i + 1]
+            i += 2
+        elif a == "--latest":
+            opts["latest"] = True
+            i += 1
+        else:
+            print(f"[WARN] Unknown argument: {a}")
+            i += 1
+    return cmd, opts
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_usage()
         sys.exit(0)
 
-    command = sys.argv[1].lower()
+    command, opts = parse_args(sys.argv[1:])
 
     if command == "capture":
-        capture_pairs()
+        capture_pairs(session_name=opts["session_name"])
 
     elif command == "calibrate":
-        calibrate()
+        calibrate(session=opts["session"], latest=opts["latest"])
 
     elif command == "depth":
         depth_viewer()
 
     elif command == "all":
         print("Running full pipeline: capture → calibrate → depth\n")
-        if capture_pairs():
-            if calibrate():
+        if capture_pairs(session_name=opts["session_name"]):
+            if calibrate(session=opts["session"], latest=opts["latest"]):
                 depth_viewer()
             else:
                 print("\nCalibration failed. Fix issues and try again.")

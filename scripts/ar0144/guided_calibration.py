@@ -48,13 +48,19 @@ import math
 # CONFIGURATION
 # =============================================================================
 
-CHECKERBOARD_COLS = 7
-CHECKERBOARD_ROWS = 5
+# Checkerboard inner corners (cols x rows). For a 10x7-square board,
+# inner corners are 9x6. Match this to whichever printout you use.
+CHECKERBOARD_COLS = 9
+CHECKERBOARD_ROWS = 6
 CHECKERBOARD = (CHECKERBOARD_COLS, CHECKERBOARD_ROWS)
-SQUARE_SIZE_MM = 30.0
+# Set to whatever you actually measured on the printed board.
+# Reference values: A2 50mm board=50.0, A3 40mm board=40.0,
+# A3-design auto-scaled-to-A4 (printer "fit to page")=25.0.
+SQUARE_SIZE_MM = 26.0
 
 CAMERA_INDEX = 0
 CALIB_DIR = "stereo_calibration_data"
+SESSIONS_DIR = os.path.join(CALIB_DIR, "sessions")
 CALIB_FILE = os.path.join(CALIB_DIR, "stereo_calibration.npz")
 BASELINE_M = 0.052
 
@@ -458,6 +464,68 @@ def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
 
+def make_session_dir(name=None):
+    """Create or reuse a session folder. Returns (path, label, existing_pair_count)."""
+    if name is None or name.strip() == "":
+        name = time.strftime("%Y%m%d-%H%M%S")
+    path = os.path.join(SESSIONS_DIR, name)
+    os.makedirs(path, exist_ok=True)
+    existing = sorted(glob.glob(os.path.join(path, "left_*.png")))
+    return path, name, len(existing)
+
+
+def collect_capture_pairs(session=None, latest=False):
+    """
+    Return ([(left_path, right_path), ...], {source_label: count}).
+
+      session=None, latest=False  -> all sessions + legacy loose files (default)
+      session="a,b"               -> only those named sessions
+      latest=True                 -> only the most recent session by mtime
+    """
+    pairs = []
+    counts = {}
+
+    def add_dir(dirpath, label):
+        lefts = sorted(glob.glob(os.path.join(dirpath, "left_*.png")))
+        rights = sorted(glob.glob(os.path.join(dirpath, "right_*.png")))
+        n = min(len(lefts), len(rights))
+        for i in range(n):
+            pairs.append((lefts[i], rights[i]))
+        if n > 0:
+            counts[label] = n
+
+    if session:
+        for name in [s.strip() for s in session.split(",") if s.strip()]:
+            spath = os.path.join(SESSIONS_DIR, name)
+            if not os.path.isdir(spath):
+                print(f"[WARN] Session not found: {name}")
+                continue
+            add_dir(spath, f"sessions/{name}")
+        return pairs, counts
+
+    if latest:
+        if not os.path.isdir(SESSIONS_DIR):
+            return pairs, counts
+        candidates = [
+            os.path.join(SESSIONS_DIR, d)
+            for d in os.listdir(SESSIONS_DIR)
+            if os.path.isdir(os.path.join(SESSIONS_DIR, d))
+        ]
+        if not candidates:
+            return pairs, counts
+        newest = max(candidates, key=os.path.getmtime)
+        add_dir(newest, f"sessions/{os.path.basename(newest)}")
+        return pairs, counts
+
+    if os.path.isdir(SESSIONS_DIR):
+        for d in sorted(os.listdir(SESSIONS_DIR)):
+            spath = os.path.join(SESSIONS_DIR, d)
+            if os.path.isdir(spath):
+                add_dir(spath, f"sessions/{d}")
+    add_dir(CALIB_DIR, "(legacy loose files)")
+    return pairs, counts
+
+
 def split_stereo_frame(frame):
     h, w = frame.shape[:2]
     mid = w // 2
@@ -595,19 +663,106 @@ def draw_hold_steady_bar(img, hold_frames, required_frames, y_pos):
 
 
 # =============================================================================
+# STEP 0: PRE-CALIBRATION CAMERA PREVIEW
+# =============================================================================
+
+def preview():
+    """Live camera preview for pre-calibration sanity check.
+
+    Shows the side-by-side stream split into left/right, prints negotiated
+    resolution + FPS, and overlays checkerboard corners when detected. Use
+    this to confirm both lenses see the world, focus is OK, and the board
+    pattern is being recognized before starting the 40-pose run.
+    """
+    print("=" * 60)
+    print("CAMERA PREVIEW (pre-calibration sanity check)")
+    print("=" * 60)
+    print("You should see two distinct camera views (left | right).")
+    print("If the checkerboard is in view, corners will be drawn on it.")
+    print("Press Q to quit.\n")
+
+    cap = open_camera()
+
+    actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    actual_fps = cap.get(cv2.CAP_PROP_FPS)
+    print(f"Negotiated: {actual_w}x{actual_h} @ {actual_fps:.1f} fps")
+    if actual_w != 2560 or actual_h != 720:
+        print(f"[WARN] Expected 2560x720, got {actual_w}x{actual_h}.")
+        print("       Side-by-side split may be wrong. Check v4l2-ctl --list-formats-ext.")
+    print()
+
+    fps_t0 = time.time()
+    fps_count = 0
+    fps_display = 0.0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("[WARN] Failed to read frame")
+            continue
+
+        left, right = split_stereo_frame(frame)
+        grayL = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
+        grayR = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
+
+        foundL, cornersL = cv2.findChessboardCorners(grayL, CHECKERBOARD, None)
+        foundR, cornersR = cv2.findChessboardCorners(grayR, CHECKERBOARD, None)
+
+        if foundL:
+            cv2.drawChessboardCorners(left, CHECKERBOARD, cornersL, foundL)
+        if foundR:
+            cv2.drawChessboardCorners(right, CHECKERBOARD, cornersR, foundR)
+
+        combined = np.hstack([left, right])
+
+        fps_count += 1
+        if fps_count >= 10:
+            now = time.time()
+            fps_display = fps_count / (now - fps_t0)
+            fps_t0 = now
+            fps_count = 0
+
+        status = (f"{actual_w}x{actual_h} @ {fps_display:4.1f} fps  |  "
+                  f"board L={'YES' if foundL else 'no '}  R={'YES' if foundR else 'no '}")
+        cv2.rectangle(combined, (0, 0), (combined.shape[1], 36), (0, 0, 0), -1)
+        cv2.putText(combined, status, (10, 25),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(combined, "Q = quit", (10, combined.shape[0] - 12),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+        cv2.imshow("Camera Preview (Left | Right)", combined)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+# =============================================================================
 # STEP 1: GUIDED CAPTURE
 # =============================================================================
 
-def guided_capture():
+def guided_capture(session_name=None):
     """
     Walks the user through each pose, showing target zones and instructions.
     Auto-captures when the board is held in the right position for ~1 second.
+
+    Each capture run writes to its own folder under stereo_calibration_data/sessions/
+    so multiple sessions accumulate without overwriting. If session_name matches an
+    existing session, capture resumes there (numbering continues past existing pairs).
     """
     print("=" * 60)
     print("GUIDED STEREO CALIBRATION CAPTURE")
     print("=" * 60)
+    session_path, session_label, existing_count = make_session_dir(session_name)
+    print(f"Session: {session_label}")
+    print(f"Folder:  {session_path}")
+    if existing_count > 0:
+        print(f"Resuming — {existing_count} pair(s) already in this session.")
     print(f"Total poses: {len(POSES)}")
-    print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners")
+    print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners, {SQUARE_SIZE_MM} mm squares")
     print()
     print("The screen will guide you through each pose.")
     print("Hold the checkerboard steady when it turns GREEN.")
@@ -616,14 +771,13 @@ def guided_capture():
     print("Press S to SKIP a pose, Q to QUIT")
     print()
 
-    ensure_dir(CALIB_DIR)
     cap = open_camera()
 
     # How many frames the board must be in-zone before auto-capture
     HOLD_REQUIRED = 20  # ~0.7 sec at 30fps
 
     pose_idx = 0
-    pair_count = 0
+    pair_count = existing_count
     hold_count = 0
 
     # Flash effect timer
@@ -729,8 +883,8 @@ def guided_capture():
         if hold_count >= HOLD_REQUIRED:
             pair_count += 1
             idx = pair_count
-            lpath = os.path.join(CALIB_DIR, f"left_{idx:03d}.png")
-            rpath = os.path.join(CALIB_DIR, f"right_{idx:03d}.png")
+            lpath = os.path.join(session_path, f"left_{idx:03d}.png")
+            rpath = os.path.join(session_path, f"right_{idx:03d}.png")
             cv2.imwrite(lpath, left)
             cv2.imwrite(rpath, right)
             print(f"  ✓ Pose {pose_idx + 1} captured: pair #{idx}")
@@ -768,23 +922,27 @@ def guided_capture():
 # STEP 2: CALIBRATION (same as before)
 # =============================================================================
 
-def calibrate():
+def calibrate(session=None, latest=False):
     print("=" * 60)
     print("STEREO CALIBRATION")
     print("=" * 60)
 
-    left_images = sorted(glob.glob(os.path.join(CALIB_DIR, "left_*.png")))
-    right_images = sorted(glob.glob(os.path.join(CALIB_DIR, "right_*.png")))
+    pairs, counts = collect_capture_pairs(session=session, latest=latest)
 
-    if len(left_images) == 0:
-        print("[ERROR] No calibration images found. Run 'capture' first.")
+    if not pairs:
+        print("[ERROR] No calibration images found.")
+        if session:
+            print(f"        Looked in sessions: {session}")
+        elif latest:
+            print(f"        No sessions found in {SESSIONS_DIR}")
+        else:
+            print("        Run 'capture' first.")
         return False
 
-    if len(left_images) != len(right_images):
-        print(f"[ERROR] Mismatched pairs: {len(left_images)} left, {len(right_images)} right.")
-        return False
-
-    print(f"Found {len(left_images)} stereo pairs.")
+    print(f"Found {len(pairs)} stereo pair(s) across:")
+    for src, n in counts.items():
+        print(f"  - {src}: {n}")
+    print()
 
     objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
@@ -797,7 +955,7 @@ def calibrate():
     img_size = None
     used_pairs = 0
 
-    for i, (lpath, rpath) in enumerate(zip(left_images, right_images)):
+    for i, (lpath, rpath) in enumerate(pairs):
         imgL = cv2.imread(lpath)
         imgR = cv2.imread(rpath)
         grayL = cv2.cvtColor(imgL, cv2.COLOR_BGR2GRAY)
@@ -977,13 +1135,23 @@ Guided Stereo Calibration — Face-Scan Style
 =============================================
 
 Usage:
-    python guided_calibration.py <command>
+    python guided_calibration.py <command> [options]
 
 Commands:
+    preview     Live left/right preview with corner overlay (sanity check)
     capture     Guided pose-by-pose capture (like a face scan)
     calibrate   Run stereo calibration on captured pairs
     depth       Live depth viewer with obstacle warnings
     all         Full pipeline: capture → calibrate → depth
+
+Options:
+    --session-name NAME   capture: write into stereo_calibration_data/sessions/NAME/
+                          (default: timestamp). Re-using a name resumes that session.
+    --session A[,B,...]   calibrate: only use these named sessions.
+    --latest              calibrate: only use the most recent session by mtime.
+
+Default calibrate behavior combines ALL sessions (plus any legacy loose
+left_*.png in stereo_calibration_data/).
 
 The guided capture walks you through 40 poses across 4 distance zones:
     - NEAR (0.3-0.6 m)     — 10 poses for close-range precision
@@ -995,22 +1163,46 @@ Each pose auto-captures when you hold the board in position for ~1 second.
 """)
 
 
+def parse_args(argv):
+    """Parse CLI args. Returns (cmd, opts)."""
+    cmd = argv[0].lower() if argv else None
+    opts = {"session_name": None, "session": None, "latest": False}
+    i = 1
+    while i < len(argv):
+        a = argv[i]
+        if a == "--session-name" and i + 1 < len(argv):
+            opts["session_name"] = argv[i + 1]
+            i += 2
+        elif a == "--session" and i + 1 < len(argv):
+            opts["session"] = argv[i + 1]
+            i += 2
+        elif a == "--latest":
+            opts["latest"] = True
+            i += 1
+        else:
+            print(f"[WARN] Unknown argument: {a}")
+            i += 1
+    return cmd, opts
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_usage()
         sys.exit(0)
 
-    cmd = sys.argv[1].lower()
+    cmd, opts = parse_args(sys.argv[1:])
 
-    if cmd == "capture":
-        guided_capture()
+    if cmd == "preview":
+        preview()
+    elif cmd == "capture":
+        guided_capture(session_name=opts["session_name"])
     elif cmd == "calibrate":
-        calibrate()
+        calibrate(session=opts["session"], latest=opts["latest"])
     elif cmd == "depth":
         depth_viewer()
     elif cmd == "all":
-        if guided_capture():
-            if calibrate():
+        if guided_capture(session_name=opts["session_name"]):
+            if calibrate(session=opts["session"], latest=opts["latest"]):
                 depth_viewer()
     else:
         print(f"Unknown command: '{cmd}'")
