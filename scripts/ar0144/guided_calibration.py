@@ -43,6 +43,7 @@ import sys
 import glob
 import time
 import math
+import subprocess
 
 # =============================================================================
 # CONFIGURATION
@@ -533,6 +534,19 @@ def split_stereo_frame(frame):
 
 
 def open_camera(index=CAMERA_INDEX):
+    # OpenCV's cap.set request to MJPG/2560x720 is unreliable on UVC drivers
+    # (silently falls back to 1280x720 on some firmwares). Pre-set with v4l2-ctl
+    # so the format actually sticks before OpenCV opens the device.
+    device = f"/dev/video{index}"
+    try:
+        subprocess.run(
+            ["v4l2-ctl", "--device", device,
+             "--set-fmt-video=width=2560,height=720,pixelformat=MJPG"],
+            check=False, capture_output=True, timeout=2,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass  # v4l2-ctl missing or stuck — fall back to OpenCV's own request
+
     cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
     if not cap.isOpened():
         print(f"[ERROR] Cannot open camera at index {index}.")
@@ -695,6 +709,12 @@ def preview():
     fps_t0 = time.time()
     fps_count = 0
     fps_display = 0.0
+    frame_idx = 0
+    # Run corner detection only every Nth frame — at 1280x720 it is expensive
+    # on a Pi 5 and would otherwise pin display FPS to ~2.
+    DETECT_EVERY = 10
+    foundL = foundR = False
+    cornersL = cornersR = None
 
     while True:
         ret, frame = cap.read()
@@ -703,15 +723,17 @@ def preview():
             continue
 
         left, right = split_stereo_frame(frame)
-        grayL = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
-        grayR = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
+        frame_idx += 1
 
-        foundL, cornersL = cv2.findChessboardCorners(grayL, CHECKERBOARD, None)
-        foundR, cornersR = cv2.findChessboardCorners(grayR, CHECKERBOARD, None)
+        if frame_idx % DETECT_EVERY == 0:
+            grayL = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
+            grayR = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
+            foundL, cornersL = cv2.findChessboardCorners(grayL, CHECKERBOARD, None)
+            foundR, cornersR = cv2.findChessboardCorners(grayR, CHECKERBOARD, None)
 
-        if foundL:
+        if foundL and cornersL is not None:
             cv2.drawChessboardCorners(left, CHECKERBOARD, cornersL, foundL)
-        if foundR:
+        if foundR and cornersR is not None:
             cv2.drawChessboardCorners(right, CHECKERBOARD, cornersR, foundR)
 
         combined = np.hstack([left, right])

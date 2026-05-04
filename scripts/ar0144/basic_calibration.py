@@ -40,6 +40,7 @@ import sys
 import glob
 import json
 import time
+import subprocess
 
 # =============================================================================
 # CONFIGURATION — Adjust these to match your setup
@@ -162,6 +163,19 @@ def split_stereo_frame(frame):
 
 def open_camera(index=CAMERA_INDEX):
     """Open the stereo camera and return the VideoCapture object."""
+    # OpenCV's cap.set request to MJPG/2560x720 is unreliable on UVC drivers
+    # (silently falls back to 1280x720 on some firmwares). Pre-set with v4l2-ctl
+    # so the format actually sticks before OpenCV opens the device.
+    device = f"/dev/video{index}"
+    try:
+        subprocess.run(
+            ["v4l2-ctl", "--device", device,
+             "--set-fmt-video=width=2560,height=720,pixelformat=MJPG"],
+            check=False, capture_output=True, timeout=2,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass  # v4l2-ctl missing or stuck — fall back to OpenCV's own request
+
     cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
     if not cap.isOpened():
         print(f"[ERROR] Cannot open camera at index {index}.")
