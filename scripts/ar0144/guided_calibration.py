@@ -818,6 +818,14 @@ def guided_capture(session_name=None):
     # Flash effect timer
     flash_timer = 0
 
+    # Live detection runs on a downscaled grayscale for speed — full-res
+    # frames are still saved at capture time and calibrate() re-detects with
+    # sub-pixel accuracy on the saved files, so quality is unaffected.
+    DETECT_SCALE = 2
+    DETECT_FLAGS = (cv2.CALIB_CB_FAST_CHECK
+                    | cv2.CALIB_CB_ADAPTIVE_THRESH
+                    | cv2.CALIB_CB_NORMALIZE_IMAGE)
+
     while pose_idx < len(POSES):
         ret, frame = cap.read()
         if not ret:
@@ -830,9 +838,18 @@ def guided_capture(session_name=None):
         pose = POSES[pose_idx]
         img_h, img_w = left.shape[:2]
 
-        # Detect corners
-        foundL, cornersL = cv2.findChessboardCorners(grayL, CHECKERBOARD, None)
-        foundR, cornersR = cv2.findChessboardCorners(grayR, CHECKERBOARD, None)
+        # Detect corners on downscaled grayscale (e.g. 640x360 instead of
+        # 1280x720). Scale corners back up afterwards for drawing/zone-check.
+        small_w = grayL.shape[1] // DETECT_SCALE
+        small_h = grayL.shape[0] // DETECT_SCALE
+        small_grayL = cv2.resize(grayL, (small_w, small_h))
+        small_grayR = cv2.resize(grayR, (small_w, small_h))
+        foundL, cornersL_small = cv2.findChessboardCorners(
+            small_grayL, CHECKERBOARD, flags=DETECT_FLAGS)
+        foundR, cornersR_small = cv2.findChessboardCorners(
+            small_grayR, CHECKERBOARD, flags=DETECT_FLAGS)
+        cornersL = cornersL_small * DETECT_SCALE if foundL else None
+        cornersR = cornersR_small * DETECT_SCALE if foundR else None
 
         # Build display image (we show left camera as the guide view)
         display = left.copy()
