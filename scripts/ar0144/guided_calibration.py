@@ -797,7 +797,7 @@ def guided_capture(session_name=None):
     print("Hold the checkerboard steady when it turns GREEN.")
     print("Auto-capture happens after ~1 second of stable detection.")
     print()
-    print("Press S to SKIP a pose, Q to QUIT")
+    print("Press S to SKIP a pose, SPACE to skip post-capture cooldown, Q to QUIT")
     print()
 
     cap = open_camera()
@@ -817,6 +817,12 @@ def guided_capture(session_name=None):
 
     # Flash effect timer
     flash_timer = 0
+
+    # Post-capture cooldown — auto-capture is disabled until time.time()
+    # >= cooldown_until. Gives the operator time to read the next pose
+    # instruction and reposition before another capture can fire.
+    COOLDOWN_SECONDS = 5.0
+    cooldown_until = 0.0
 
     # Live detection runs on a downscaled grayscale for speed — full-res
     # frames are still saved at capture time and calibrate() re-detects with
@@ -865,7 +871,11 @@ def guided_capture(session_name=None):
             corner_color = (0, 255, 0) if in_zone else (0, 165, 255)
             cv2.drawChessboardCorners(display, CHECKERBOARD, cornersL, foundL)
 
-        if in_zone:
+        now = time.time()
+        in_cooldown = now < cooldown_until
+        cooldown_remaining = max(0.0, cooldown_until - now)
+
+        if in_zone and not in_cooldown:
             hold_count += 1
             zone_color = (0, 255, 0)  # Green = in position
         else:
@@ -904,7 +914,11 @@ def guided_capture(session_name=None):
             draw_hold_steady_bar(display, hold_count, HOLD_REQUIRED, img_h - 40)
 
         # --- Status at bottom ---
-        if not foundL and not foundR:
+        if in_cooldown:
+            status = (f"GET READY — next capture armed in {cooldown_remaining:0.1f}s "
+                      "(SPACE to skip)")
+            status_color = (0, 255, 255)
+        elif not foundL and not foundR:
             status = "No checkerboard detected — adjust position"
             status_color = (0, 0, 200)
         elif not foundR:
@@ -931,6 +945,25 @@ def guided_capture(session_name=None):
             cv2.addWeighted(white, alpha * 0.5, display, 1.0, 0, display)
             flash_timer -= 1
 
+        # --- Big centered countdown overlay during cooldown ---
+        if in_cooldown:
+            big_text = f"NEXT POSE in {cooldown_remaining:0.1f}s"
+            scale = 1.4
+            thick = 3
+            (tw, th), _ = cv2.getTextSize(
+                big_text, cv2.FONT_HERSHEY_SIMPLEX, scale, thick)
+            tx = (img_w - tw) // 2
+            ty = img_h // 2
+            # Shadow then text
+            cv2.putText(display, big_text, (tx + 2, ty + 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 0), thick + 2)
+            cv2.putText(display, big_text, (tx, ty),
+                        cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 255, 255), thick)
+            hint = "SPACE = skip cooldown"
+            (hw, _), _ = cv2.getTextSize(hint, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+            cv2.putText(display, hint, ((img_w - hw) // 2, ty + 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 2)
+
         # --- Auto-capture ---
         if hold_count >= HOLD_REQUIRED:
             pair_count += 1
@@ -944,7 +977,7 @@ def guided_capture(session_name=None):
             hold_count = 0
             flash_timer = 10  # Flash effect
             pose_idx += 1
-            time.sleep(0.3)  # Brief pause
+            cooldown_until = time.time() + COOLDOWN_SECONDS
             continue
 
         cv2.imshow(WINDOW_NAME, display)
@@ -955,6 +988,10 @@ def guided_capture(session_name=None):
         elif key == ord('s'):
             print(f"  → Skipped pose {pose_idx + 1}: {pose['name']}")
             pose_idx += 1
+            cooldown_until = 0.0  # Skipping doesn't need cooldown
+        elif key == ord(' '):
+            if cooldown_until > time.time():
+                cooldown_until = 0.0  # Operator ready, skip the wait
 
     cap.release()
     cv2.destroyAllWindows()
