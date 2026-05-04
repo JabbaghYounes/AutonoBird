@@ -706,6 +706,13 @@ def preview():
         print("       Side-by-side split may be wrong. Check v4l2-ctl --list-formats-ext.")
     print()
 
+    # Force a resizable window at a sensible size. The combined frame is
+    # 2560x720 — too wide for most screens. WINDOW_NORMAL lets the user
+    # drag-resize and Qt scales the contents to fit.
+    WINDOW_NAME = "Camera Preview (Left | Right)"
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(WINDOW_NAME, 1600, 480)
+
     fps_t0 = time.time()
     fps_count = 0
     fps_display = 0.0
@@ -753,7 +760,7 @@ def preview():
         cv2.putText(combined, "Q = quit", (10, combined.shape[0] - 12),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
-        cv2.imshow("Camera Preview (Left | Right)", combined)
+        cv2.imshow(WINDOW_NAME, combined)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -797,6 +804,12 @@ def guided_capture(session_name=None):
 
     # How many frames the board must be in-zone before auto-capture
     HOLD_REQUIRED = 20  # ~0.7 sec at 30fps
+
+    # Force a resizable window at a sensible size. OpenCV's default
+    # WINDOW_AUTOSIZE renders as a tiny ~400px box on some VNC + Qt builds.
+    WINDOW_NAME = "Guided Calibration - Follow the instructions"
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(WINDOW_NAME, 1280, 720)
 
     pose_idx = 0
     pair_count = existing_count
@@ -917,7 +930,7 @@ def guided_capture(session_name=None):
             time.sleep(0.3)  # Brief pause
             continue
 
-        cv2.imshow("Guided Calibration — Follow the instructions", display)
+        cv2.imshow(WINDOW_NAME, display)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
