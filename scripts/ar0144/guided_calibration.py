@@ -43,7 +43,9 @@ import sys
 import glob
 import time
 import math
+import json
 import subprocess
+from datetime import datetime, timezone
 
 # =============================================================================
 # CONFIGURATION
@@ -475,6 +477,44 @@ def make_session_dir(name=None):
     return path, name, len(existing)
 
 
+def manifest_path(session_path):
+    return os.path.join(session_path, "manifest.json")
+
+
+def load_manifest(session_path):
+    """Read the session manifest. Returns a dict with at least {'captured': [...]}."""
+    p = manifest_path(session_path)
+    if not os.path.exists(p):
+        return {"version": 1, "captured": []}
+    try:
+        with open(p) as f:
+            data = json.load(f)
+        if "captured" not in data:
+            data["captured"] = []
+        return data
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"[WARN] Failed to load {p}: {e} — starting with empty manifest")
+        return {"version": 1, "captured": []}
+
+
+def save_manifest(session_path, manifest):
+    p = manifest_path(session_path)
+    tmp = p + ".tmp"
+    try:
+        with open(tmp, "w") as f:
+            json.dump(manifest, f, indent=2)
+        os.replace(tmp, p)
+    except OSError as e:
+        print(f"[WARN] Failed to save manifest: {e}")
+
+
+def resume_pose_idx(manifest):
+    """Pose index at which to start a resumed capture run."""
+    idxs = [r.get("pose_idx") for r in manifest.get("captured", [])
+            if isinstance(r.get("pose_idx"), int)]
+    return max(idxs) + 1 if idxs else 0
+
+
 def collect_capture_pairs(session=None, latest=False):
     """
     Return ([(left_path, right_path), ...], {source_label: count}).
@@ -790,10 +830,23 @@ def guided_capture(session_name=None):
     print("GUIDED STEREO CALIBRATION CAPTURE")
     print("=" * 60)
     session_path, session_label, existing_count = make_session_dir(session_name)
+    manifest = load_manifest(session_path)
+    start_pose_idx = resume_pose_idx(manifest)
+    captured_count = len(manifest.get("captured", []))
+
     print(f"Session: {session_label}")
     print(f"Folder:  {session_path}")
-    if existing_count > 0:
-        print(f"Resuming — {existing_count} pair(s) already in this session.")
+    if captured_count > 0:
+        print(f"Resuming — {captured_count} pose(s) tracked in manifest, "
+              f"{existing_count} pair file(s) on disk.")
+        print(f"Starting at pose {start_pose_idx + 1}/{len(POSES)} "
+              f"(skipped poses from previous runs will be re-prompted).")
+    if start_pose_idx >= len(POSES):
+        print()
+        print("All 40 poses already captured in this session. Nothing to do.")
+        print("Run 'calibrate' to compute calibration, or use a different "
+              "--session-name to start fresh.")
+        return True
     print(f"Total poses: {len(POSES)}")
     print(f"Checkerboard: {CHECKERBOARD[0]}x{CHECKERBOARD[1]} inner corners, {SQUARE_SIZE_MM} mm squares")
     print()
@@ -815,7 +868,7 @@ def guided_capture(session_name=None):
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, 1280, 720)
 
-    pose_idx = 0
+    pose_idx = start_pose_idx
     pair_count = existing_count
     hold_count = 0
 
@@ -1028,7 +1081,16 @@ def guided_capture(session_name=None):
             rpath = os.path.join(session_path, f"right_{idx:03d}.png")
             cv2.imwrite(lpath, left)
             cv2.imwrite(rpath, right)
-            print(f"  ✓ Pose {pose_idx + 1} captured: pair #{idx}")
+
+            manifest["captured"].append({
+                "pose_idx": pose_idx,
+                "pair_idx": idx,
+                "name": pose["name"],
+                "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            })
+            save_manifest(session_path, manifest)
+
+            print(f"  ✓ Pose {pose_idx + 1} ({pose['name']}) captured: pair #{idx}")
 
             hold_count = 0
             flash_timer = 10  # Flash effect
