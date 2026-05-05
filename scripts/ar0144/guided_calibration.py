@@ -554,6 +554,10 @@ def open_camera(index=CAMERA_INDEX):
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # Keep only 1 frame in V4L2's buffer so cap.read() always returns the
+    # latest frame instead of stale buffered ones (common after a slow
+    # imwrite() during capture).
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     time.sleep(1)
     return cap
 
@@ -832,10 +836,45 @@ def guided_capture(session_name=None):
                     | cv2.CALIB_CB_ADAPTIVE_THRESH
                     | cv2.CALIB_CB_NORMALIZE_IMAGE)
 
+    # Watchdog + heartbeat. If cap.read() fails too many times in a row,
+    # bail out cleanly rather than hanging silently. Print a heartbeat to
+    # console every few seconds so the operator can tell whether the script
+    # is alive when the GUI is laggy or appears frozen.
+    consecutive_bad_reads = 0
+    MAX_BAD_READS = 60  # ~5s at 13 fps
+    last_heartbeat = time.time()
+    HEARTBEAT_INTERVAL = 3.0
+    frames_since_hb = 0
+
+    # Cache a single white array for the flash overlay rather than
+    # allocating a fresh 2.7 MB buffer every frame during the flash.
+    flash_white = None
+
     while pose_idx < len(POSES):
+        read_t0 = time.time()
         ret, frame = cap.read()
-        if not ret:
+        read_dt = time.time() - read_t0
+        if read_dt > 1.0:
+            print(f"[WARN] cap.read() took {read_dt:.2f}s — USB/camera hiccup")
+        if not ret or frame is None:
+            consecutive_bad_reads += 1
+            if consecutive_bad_reads >= MAX_BAD_READS:
+                print(f"[ERROR] {consecutive_bad_reads} consecutive bad reads — "
+                      "camera disconnected or hung. Exiting capture.")
+                break
             continue
+        consecutive_bad_reads = 0
+        frames_since_hb += 1
+
+        now = time.time()
+        if now - last_heartbeat >= HEARTBEAT_INTERVAL:
+            fps = frames_since_hb / (now - last_heartbeat)
+            print(f"  [heartbeat] pose={pose_idx + 1}/{len(POSES)} "
+                  f"pairs={pair_count} fps={fps:.1f} "
+                  f"hold={hold_count}/{HOLD_REQUIRED} "
+                  f"cooldown={max(0.0, cooldown_until - now):.1f}s")
+            last_heartbeat = now
+            frames_since_hb = 0
 
         left, right = split_stereo_frame(frame)
         grayL = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
@@ -871,7 +910,6 @@ def guided_capture(session_name=None):
             corner_color = (0, 255, 0) if in_zone else (0, 165, 255)
             cv2.drawChessboardCorners(display, CHECKERBOARD, cornersL, foundL)
 
-        now = time.time()
         in_cooldown = now < cooldown_until
         cooldown_remaining = max(0.0, cooldown_until - now)
 
@@ -940,9 +978,10 @@ def guided_capture(session_name=None):
 
         # --- Flash effect after capture ---
         if flash_timer > 0:
+            if flash_white is None or flash_white.shape != display.shape:
+                flash_white = np.full_like(display, 255)
             alpha = flash_timer / 10.0
-            white = np.ones_like(display) * 255
-            cv2.addWeighted(white, alpha * 0.5, display, 1.0, 0, display)
+            cv2.addWeighted(flash_white, alpha * 0.5, display, 1.0, 0, display)
             flash_timer -= 1
 
         # --- Big centered countdown overlay during cooldown ---
@@ -964,6 +1003,23 @@ def guided_capture(session_name=None):
             cv2.putText(display, hint, ((img_w - hw) // 2, ty + 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 2)
 
+        # Always refresh the GUI before any heavy I/O (imwrite below) so the
+        # Qt event loop has a chance to process pending events. This keeps
+        # VNC responsive even on capture frames.
+        cv2.imshow(WINDOW_NAME, display)
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            break
+        elif key == ord('s'):
+            print(f"  → Skipped pose {pose_idx + 1}: {pose['name']}")
+            pose_idx += 1
+            cooldown_until = 0.0  # Skipping doesn't need cooldown
+            continue
+        elif key == ord(' '):
+            if cooldown_until > time.time():
+                cooldown_until = 0.0  # Operator ready, skip the wait
+
         # --- Auto-capture ---
         if hold_count >= HOLD_REQUIRED:
             pair_count += 1
@@ -978,20 +1034,6 @@ def guided_capture(session_name=None):
             flash_timer = 10  # Flash effect
             pose_idx += 1
             cooldown_until = time.time() + COOLDOWN_SECONDS
-            continue
-
-        cv2.imshow(WINDOW_NAME, display)
-
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
-        elif key == ord('s'):
-            print(f"  → Skipped pose {pose_idx + 1}: {pose['name']}")
-            pose_idx += 1
-            cooldown_until = 0.0  # Skipping doesn't need cooldown
-        elif key == ord(' '):
-            if cooldown_until > time.time():
-                cooldown_until = 0.0  # Operator ready, skip the wait
 
     cap.release()
     cv2.destroyAllWindows()
