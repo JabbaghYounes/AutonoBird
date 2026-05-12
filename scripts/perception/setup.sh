@@ -85,25 +85,24 @@ print(f"  cv2            : {cv2.__version__}")
 print(f"  numpy          : {numpy.__version__}")
 print(f"  hailo_platform : {hailo_platform.__version__}")
 
-# cv2 GUI check. If no display is available (e.g. plain SSH session),
-# use Qt's offscreen platform so we can still verify the Qt plugin loads
-# without actually opening a window. The real script must be launched
-# from a VNC-attached desktop terminal where $DISPLAY is set.
+# cv2 GUI smoke test only works with a real $DISPLAY (the opencv-python
+# wheel only ships the xcb Qt plugin — no offscreen fallback available).
+# If no display, skip the test rather than crash; the real script must
+# be launched from a VNC-attached desktop terminal anyway.
 if not os.environ.get("DISPLAY"):
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"
-    note = " (offscreen — no $DISPLAY in this terminal)"
+    print("  cv2 GUI        : SKIPPED (no $DISPLAY in this terminal)")
+    print("                   Run yolo_detect.py from a VNC-attached desktop")
+    print("                   terminal to actually use the GUI.")
 else:
-    note = ""
-
-try:
-    cv2.namedWindow("setup_test", cv2.WINDOW_NORMAL)
-    cv2.destroyAllWindows()
-    print(f"  cv2 GUI        : OK{note}")
-except cv2.error as e:
-    print(f"  cv2 GUI        : FAILED ({e})")
-    print("                   The opencv-python aarch64 wheel may lack GUI support.")
-    print("                   Fall back: sudo apt install python3-opencv  and recreate")
-    print("                   this venv with --system-site-packages to inherit it.")
+    try:
+        cv2.namedWindow("setup_test", cv2.WINDOW_NORMAL)
+        cv2.destroyAllWindows()
+        print("  cv2 GUI        : OK")
+    except cv2.error as e:
+        print(f"  cv2 GUI        : FAILED ({e})")
+        print("                   The opencv-python aarch64 wheel may lack GUI support.")
+        print("                   Fall back: sudo apt install python3-opencv  and recreate")
+        print("                   this venv with --system-site-packages to inherit it.")
 PY
 
 echo ""
