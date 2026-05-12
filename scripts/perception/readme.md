@@ -22,9 +22,10 @@ once stereo calibration is integrated.
 
 ## Prerequisites
 
-- HailoRT runtime and Python bindings (already installed on the Pi from
-  Benchy use; verify with `hailortcli fw-control identify` and
-  `python3 -c 'import hailo_platform'`).
+- HailoRT runtime on the Pi (verify with `hailortcli fw-control identify`).
+  The Python bindings get installed into this subsystem's own venv by
+  `setup.sh` (which links them from Benchy's venv to avoid tracking the
+  Hailo SDK wheel separately).
 - A compiled HEF for Hailo-8. Recommended: a YOLOv8n **detection** HEF
   (COCO 80 classes, NMS in-network) from the
   [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo).
@@ -33,20 +34,31 @@ once stereo calibration is integrated.
   `*.hef`.
 - AR0144 stereo USB camera enumerated as `/dev/video0` (the same setup the
   calibration scripts use).
-- OpenCV + numpy in the active Python environment.
+
+## One-time setup
+
+```bash
+cd ~/Documents/AutonoBird/scripts/perception
+bash setup.sh
+```
+
+`setup.sh` creates a dedicated `venv/` here, installs `opencv-python<4.11`
+and `numpy<2` (the only combination compatible with hailort 4.23), and
+links `hailo_platform` from Benchy's venv. The version pins are
+interlocked — bumping any one of them breaks at least one of the others.
 
 ## Quick start
 
 ```bash
-# 1. (Once) get a Hailo-8 pre-compiled YOLOv8n detection HEF
-mkdir -p ~/Documents/AutonoBird/scripts/perception/models
-# Place it as models/model.hef (the default the script picks up)
+# 1. (Once) drop a Hailo-8 pre-compiled YOLOv8n detection HEF at:
+#    scripts/perception/models/model.hef
 
 # 2. Confirm Hailo runtime sees the AI HAT+
 hailortcli fw-control identify
 
-# 3. Run
+# 3. Activate this subsystem's venv and run
 cd ~/Documents/AutonoBird/scripts/perception
+source venv/bin/activate
 python3 yolo_detect.py
 # Or with overrides:
 python3 yolo_detect.py --hef models/model.hef --threshold 0.35
