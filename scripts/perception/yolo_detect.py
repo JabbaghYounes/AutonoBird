@@ -210,28 +210,85 @@ class HailoYOLO:
         return outputs
 
 
-def decode_detections(raw_output, confidence_threshold):
-    """Extract detections from an NMS-baked single-output tensor.
+_decode_layout_logged = False
 
-    Handles the common Hailo Model Zoo conventions:
-      - (1, N, 6): N detections, each [x1, y1, x2, y2, score, class_id]
-      - (N, 6): same without batch dim
+
+def decode_detections(raw_output, confidence_threshold, num_classes=80):
+    """Extract detections from an NMS-baked Hailo Model Zoo output tensor.
+
+    Supports the two common layouts:
+      - (B, N, 6) / (N, 6): flat list of detections, each
+        [x1, y1, x2, y2, score, class_id]
+      - (B, C, 5, K) / (C, 5, K): per-class output, C classes each with up
+        to K detections of [x1, y1, x2, y2, score]. Class id is implicit
+        in the first axis (this is the yolov8n_nms_postprocess convention).
+      - (B, C, K, 5) / (C, K, 5): same as above with axes 1/2 transposed.
+
+    Coordinates are in normalised [0, 1] of model input space.
     """
+    global _decode_layout_logged
     tensor = next(iter(raw_output.values()))
-    while tensor.ndim > 2:
+    # Strip leading batch dim
+    if tensor.ndim == 4:
         tensor = tensor[0]
+
     detections = []
-    for row in tensor:
-        if len(row) < 6:
-            continue
-        x1, y1, x2, y2, score, class_id = row[:6]
-        if score < confidence_threshold:
-            continue
-        detections.append({
-            "bbox": (float(x1), float(y1), float(x2), float(y2)),
-            "score": float(score),
-            "class_id": int(class_id),
-        })
+
+    if tensor.ndim == 2 and tensor.shape[1] >= 6:
+        # Flat (N, 6) form
+        if not _decode_layout_logged:
+            print(f"[INFO] Detection layout: flat (N, 6) — shape {tensor.shape}")
+            _decode_layout_logged = True
+        for row in tensor:
+            x1, y1, x2, y2, score, class_id = row[:6]
+            if score < confidence_threshold:
+                continue
+            detections.append({
+                "bbox": (float(x1), float(y1), float(x2), float(y2)),
+                "score": float(score),
+                "class_id": int(class_id),
+            })
+
+    elif tensor.ndim == 3 and tensor.shape[0] == num_classes and tensor.shape[1] == 5:
+        # (C, 5, K) form — yolov8n_nms_postprocess convention
+        if not _decode_layout_logged:
+            print(f"[INFO] Detection layout: per-class (C, 5, K) — shape {tensor.shape}")
+            _decode_layout_logged = True
+        for class_id in range(tensor.shape[0]):
+            per_class = tensor[class_id]  # (5, K)
+            scores = per_class[4]
+            valid = np.where(scores >= confidence_threshold)[0]
+            for k in valid:
+                detections.append({
+                    "bbox": (float(per_class[0, k]), float(per_class[1, k]),
+                             float(per_class[2, k]), float(per_class[3, k])),
+                    "score": float(scores[k]),
+                    "class_id": class_id,
+                })
+
+    elif tensor.ndim == 3 and tensor.shape[0] == num_classes and tensor.shape[2] == 5:
+        # (C, K, 5) form
+        if not _decode_layout_logged:
+            print(f"[INFO] Detection layout: per-class (C, K, 5) — shape {tensor.shape}")
+            _decode_layout_logged = True
+        for class_id in range(tensor.shape[0]):
+            per_class = tensor[class_id]  # (K, 5)
+            scores = per_class[:, 4]
+            valid = np.where(scores >= confidence_threshold)[0]
+            for k in valid:
+                detections.append({
+                    "bbox": (float(per_class[k, 0]), float(per_class[k, 1]),
+                             float(per_class[k, 2]), float(per_class[k, 3])),
+                    "score": float(scores[k]),
+                    "class_id": class_id,
+                })
+
+    else:
+        if not _decode_layout_logged:
+            print(f"[WARN] Unknown detection output shape: {tensor.shape}. "
+                  f"Expected (N, 6) or per-class (C, 5, K) / (C, K, 5).")
+            _decode_layout_logged = True
+
     return detections
 
 
