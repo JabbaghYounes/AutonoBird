@@ -214,28 +214,63 @@ _decode_layout_logged = False
 
 
 def decode_detections(raw_output, confidence_threshold, num_classes=80):
-    """Extract detections from an NMS-baked Hailo Model Zoo output tensor.
+    """Extract detections from a Hailo NMS-baked output.
 
-    Supports the two common layouts:
-      - (B, N, 6) / (N, 6): flat list of detections, each
-        [x1, y1, x2, y2, score, class_id]
-      - (B, C, 5, K) / (C, 5, K): per-class output, C classes each with up
-        to K detections of [x1, y1, x2, y2, score]. Class id is implicit
-        in the first axis (this is the yolov8n_nms_postprocess convention).
-      - (B, C, K, 5) / (C, K, 5): same as above with axes 1/2 transposed.
+    Hailo Model Zoo's yolov8n_nms_postprocess returns a Python *list* of
+    `num_classes` lists at runtime — one list per class, each containing
+    zero or more [x1, y1, x2, y2, score] 5-element arrays. The HEF
+    metadata's "shape (80, 5, 100)" is the capacity hint, not the runtime
+    container shape.
+
+    Supports three layouts for forward/backward compatibility:
+      - Python list per class                (Hailo NMS runtime default)
+      - ndarray (B, N, 6) / (N, 6)           flat detections w/ class_id col
+      - ndarray (B, C, 5, K) / (C, 5, K)     per-class capacity-shaped tensor
+      - ndarray (B, C, K, 5) / (C, K, 5)     same, axes transposed
 
     Coordinates are in normalised [0, 1] of model input space.
     """
     global _decode_layout_logged
-    tensor = next(iter(raw_output.values()))
-    # Strip leading batch dim
+    payload = next(iter(raw_output.values()))
+
+    # --- Python list layout (default Hailo NMS runtime output) ---
+    if isinstance(payload, list):
+        classes = payload
+        # Unwrap a possible batch dim: [B=1][num_classes][N][5] -> [num_classes][N][5]
+        if (len(classes) == 1 and isinstance(classes[0], (list, tuple))
+                and len(classes[0]) == num_classes):
+            classes = classes[0]
+
+        if not _decode_layout_logged:
+            print(f"[INFO] Detection layout: Hailo NMS list, {len(classes)} classes")
+            _decode_layout_logged = True
+
+        detections = []
+        for class_id, class_dets in enumerate(classes):
+            if class_dets is None or len(class_dets) == 0:
+                continue
+            for det in class_dets:
+                det_arr = np.asarray(det)
+                if det_arr.size < 5:
+                    continue
+                x1, y1, x2, y2, score = det_arr.flat[:5]
+                if score < confidence_threshold:
+                    continue
+                detections.append({
+                    "bbox": (float(x1), float(y1), float(x2), float(y2)),
+                    "score": float(score),
+                    "class_id": class_id,
+                })
+        return detections
+
+    # --- ndarray fallback layouts ---
+    tensor = payload
     if tensor.ndim == 4:
         tensor = tensor[0]
 
     detections = []
 
     if tensor.ndim == 2 and tensor.shape[1] >= 6:
-        # Flat (N, 6) form
         if not _decode_layout_logged:
             print(f"[INFO] Detection layout: flat (N, 6) — shape {tensor.shape}")
             _decode_layout_logged = True
@@ -250,12 +285,11 @@ def decode_detections(raw_output, confidence_threshold, num_classes=80):
             })
 
     elif tensor.ndim == 3 and tensor.shape[0] == num_classes and tensor.shape[1] == 5:
-        # (C, 5, K) form — yolov8n_nms_postprocess convention
         if not _decode_layout_logged:
             print(f"[INFO] Detection layout: per-class (C, 5, K) — shape {tensor.shape}")
             _decode_layout_logged = True
         for class_id in range(tensor.shape[0]):
-            per_class = tensor[class_id]  # (5, K)
+            per_class = tensor[class_id]
             scores = per_class[4]
             valid = np.where(scores >= confidence_threshold)[0]
             for k in valid:
@@ -267,12 +301,11 @@ def decode_detections(raw_output, confidence_threshold, num_classes=80):
                 })
 
     elif tensor.ndim == 3 and tensor.shape[0] == num_classes and tensor.shape[2] == 5:
-        # (C, K, 5) form
         if not _decode_layout_logged:
             print(f"[INFO] Detection layout: per-class (C, K, 5) — shape {tensor.shape}")
             _decode_layout_logged = True
         for class_id in range(tensor.shape[0]):
-            per_class = tensor[class_id]  # (K, 5)
+            per_class = tensor[class_id]
             scores = per_class[:, 4]
             valid = np.where(scores >= confidence_threshold)[0]
             for k in valid:
@@ -285,8 +318,8 @@ def decode_detections(raw_output, confidence_threshold, num_classes=80):
 
     else:
         if not _decode_layout_logged:
-            print(f"[WARN] Unknown detection output shape: {tensor.shape}. "
-                  f"Expected (N, 6) or per-class (C, 5, K) / (C, K, 5).")
+            print(f"[WARN] Unknown detection output type/shape: "
+                  f"type={type(payload).__name__}, shape={getattr(tensor, 'shape', 'n/a')}")
             _decode_layout_logged = True
 
     return detections
