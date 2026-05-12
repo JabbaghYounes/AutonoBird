@@ -4,3 +4,7 @@ voices/
 __pycache__/
 CLAUDE.md
 resources/
+# Hailo NPU compiled models (binary, can be 5-20 MB each)
+*.hef
+# HailoRT runtime log
+hailort.log

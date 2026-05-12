@@ -60,7 +60,8 @@ except ImportError as e:
 # CONFIGURATION
 # =============================================================================
 
-DEFAULT_HEF = os.path.expanduser("~/hailo_models/yolov8n.hef")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_HEF = os.path.join(SCRIPT_DIR, "models", "model.hef")
 DEFAULT_CONFIDENCE = 0.4
 INPUT_SIZE = 640  # YOLOv8/v11 standard square input
 CAMERA_INDEX = 0

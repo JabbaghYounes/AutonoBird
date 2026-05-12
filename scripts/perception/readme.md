@@ -25,10 +25,12 @@ once stereo calibration is integrated.
 - HailoRT runtime and Python bindings (already installed on the Pi from
   Benchy use; verify with `hailortcli fw-control identify` and
   `python3 -c 'import hailo_platform'`).
-- A compiled HEF for Hailo-8. Recommended starting point:
-  **`yolov8n.hef`** from the [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo)
-  — COCO 80 classes, NMS in-network. Place it at `~/hailo_models/yolov8n.hef`
-  or pass `--hef PATH` to the script.
+- A compiled HEF for Hailo-8. Recommended: a YOLOv8n **detection** HEF
+  (COCO 80 classes, NMS in-network) from the
+  [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo).
+  Place it at `scripts/perception/models/model.hef` (the default the script
+  looks for) or pass `--hef PATH`. The `models/` folder is gitignored via
+  `*.hef`.
 - AR0144 stereo USB camera enumerated as `/dev/video0` (the same setup the
   calibration scripts use).
 - OpenCV + numpy in the active Python environment.
@@ -36,9 +38,9 @@ once stereo calibration is integrated.
 ## Quick start
 
 ```bash
-# 1. (Once) get a Hailo-8 pre-compiled HEF
-mkdir -p ~/hailo_models
-# Download yolov8n.hef from the Hailo Model Zoo into ~/hailo_models/
+# 1. (Once) get a Hailo-8 pre-compiled YOLOv8n detection HEF
+mkdir -p ~/Documents/AutonoBird/scripts/perception/models
+# Place it as models/model.hef (the default the script picks up)
 
 # 2. Confirm Hailo runtime sees the AI HAT+
 hailortcli fw-control identify
@@ -47,7 +49,7 @@ hailortcli fw-control identify
 cd ~/Documents/AutonoBird/scripts/perception
 python3 yolo_detect.py
 # Or with overrides:
-python3 yolo_detect.py --hef ~/hailo_models/yolov8n.hef --threshold 0.35
+python3 yolo_detect.py --hef models/model.hef --threshold 0.35
 ```
 
 ## What you should see
