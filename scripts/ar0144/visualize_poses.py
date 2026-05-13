@@ -173,73 +173,144 @@ def board_position_from_region(region, distance_m, hfov_deg=HFOV_DEG, aspect=ASP
 # 3D drawing
 # =============================================================================
 
-def draw_frustum(ax, far_m, hfov_deg=HFOV_DEG, aspect=ASPECT, color="gray"):
-    """Draw the camera viewing frustum from origin out to far_m."""
-    tan_h = np.tan(np.radians(hfov_deg / 2))
-    tan_v = tan_h / aspect
-    # Far rectangle (in camera-Z forward, X right, Y up after flip)
-    w = far_m * tan_h
-    h = far_m * tan_v
-    corners = np.array([
-        [-w, -h, far_m],
-        [+w, -h, far_m],
-        [+w, +h, far_m],
-        [-w, +h, far_m],
-    ])
-    # Apex (origin) -> corners
-    for c in corners:
-        ax.plot([0, c[0]], [0, c[2]], [0, c[1]], color=color, lw=0.7, alpha=0.5)
-    # Far rectangle edges
-    loop = np.vstack([corners, corners[:1]])
-    ax.plot(loop[:, 0], loop[:, 2], loop[:, 1], color=color, lw=0.7, alpha=0.5)
+def camera_world_pose(pose):
+    """Compute the camera's position + orientation in a board-fixed world frame.
+
+    World frame conventions:
+      X: right (when facing the wall)
+      Y: up
+      Z: away from wall, toward the operator (positive)
+    Board is at world origin with its face normal pointing in +Z.
+
+    Returns (cam_pos_world, R_cam_to_world) where R_cam_to_world's columns
+    are the camera's local axes expressed in world coords. The camera's
+    optical axis (its local +Z) points toward the board for centred poses.
+    """
+    distance = zone_distance(pose["name"])
+    t_b = board_position_from_region(pose["region"], distance)  # board in cam frame
+    R_b = rotation_matrix(*board_orientation(pose))             # board in cam frame
+
+    # Invert: camera position in BOARD frame
+    cam_pos_board = -R_b.T @ t_b
+    R_cam_to_board = R_b.T
+
+    # Flip Z so the camera ends up at positive world-Z (operator side).
+    M = np.diag([1.0, 1.0, -1.0])
+    cam_pos_world = M @ cam_pos_board
+    R_cam_to_world = M @ R_cam_to_board
+    return cam_pos_world, R_cam_to_world
 
 
-def draw_board_3d(ax, center, R, color="tab:blue"):
-    """Draw the checkerboard plane in 3D given centre + rotation matrix."""
-    hw = BOARD_W_M / 2
-    hh = BOARD_H_M / 2
+def draw_camera_3d(ax, cam_pos, R_cw, frustum_len=0.4, color="red"):
+    """Draw the camera as a small pyramid frustum at the given world pose."""
+    tan_h = np.tan(np.radians(HFOV_DEG / 2))
+    tan_v = tan_h / ASPECT
+    w = frustum_len * tan_h
+    h = frustum_len * tan_v
+    # Far rectangle in camera-local coords (apex at origin, +Z is forward)
     corners_local = np.array([
-        [-hw, -hh, 0],
-        [+hw, -hh, 0],
-        [+hw, +hh, 0],
-        [-hw, +hh, 0],
+        [-w, -h, frustum_len],
+        [+w, -h, frustum_len],
+        [+w, +h, frustum_len],
+        [-w, +h, frustum_len],
     ])
-    corners_world = (R @ corners_local.T).T + center
-    verts = [list(zip(corners_world[:, 0], corners_world[:, 2], corners_world[:, 1]))]
-    poly = Poly3DCollection(verts, facecolors=color, alpha=0.55, edgecolors="black")
-    ax.add_collection3d(poly)
-    # Mark TOP edge so the operator can orient the board correctly
-    top_edge = corners_world[2:4]
-    ax.plot(top_edge[:, 0], top_edge[:, 2], top_edge[:, 1],
+    corners_world = (R_cw @ corners_local.T).T + cam_pos
+
+    # Apex marker
+    ax.scatter([cam_pos[0]], [cam_pos[2]], [cam_pos[1]],
+               color=color, s=45, zorder=10)
+    # Apex-to-corner lines
+    for c in corners_world:
+        ax.plot([cam_pos[0], c[0]],
+                [cam_pos[2], c[2]],
+                [cam_pos[1], c[1]],
+                color=color, lw=1.0, alpha=0.8)
+    # Far rectangle loop
+    loop = np.vstack([corners_world, corners_world[:1]])
+    ax.plot(loop[:, 0], loop[:, 2], loop[:, 1],
+            color=color, lw=1.0, alpha=0.8)
+
+    # "Up" tick (camera's local +Y axis) to show roll orientation
+    up_local = np.array([0, frustum_len * 0.6, 0])
+    up_world = R_cw @ up_local + cam_pos
+    ax.plot([cam_pos[0], up_world[0]],
+            [cam_pos[2], up_world[2]],
+            [cam_pos[1], up_world[1]],
+            color="orange", lw=2.0)
+
+
+def draw_wall_and_board(ax, wall_extent=2.2):
+    """Draw the wall plane at world Z=0 and the checkerboard mounted on it."""
+    we = wall_extent
+    # Wall — large translucent rectangle at Z=0 (X-Y plane)
+    wall_corners = np.array([
+        [-we, -we * 0.6, 0],
+        [+we, -we * 0.6, 0],
+        [+we, +we * 0.6, 0],
+        [-we, +we * 0.6, 0],
+    ])
+    wall_verts = [list(zip(wall_corners[:, 0],
+                            wall_corners[:, 2],
+                            wall_corners[:, 1]))]
+    wall_poly = Poly3DCollection(wall_verts,
+                                  facecolors="#ececec",
+                                  alpha=0.35,
+                                  edgecolors="#888")
+    ax.add_collection3d(wall_poly)
+
+    # Board — sits at origin, face in +Z. Render at z=+0.005 to avoid
+    # z-fighting with the wall.
+    hw, hh = BOARD_W_M / 2, BOARD_H_M / 2
+    board_corners = np.array([
+        [-hw, -hh, 0.005],
+        [+hw, -hh, 0.005],
+        [+hw, +hh, 0.005],
+        [-hw, +hh, 0.005],
+    ])
+    board_verts = [list(zip(board_corners[:, 0],
+                             board_corners[:, 2],
+                             board_corners[:, 1]))]
+    board_poly = Poly3DCollection(board_verts,
+                                   facecolors="white",
+                                   alpha=0.95,
+                                   edgecolors="black")
+    ax.add_collection3d(board_poly)
+    # Mark the TOP edge in orange so the operator can read orientation
+    ax.plot([-hw, +hw], [0.005, 0.005], [+hh, +hh],
             color="orange", lw=2.5)
 
 
 def draw_3d_view(ax, pose):
-    name = pose["name"]
-    distance = zone_distance(name)
-    pos = board_position_from_region(pose["region"], distance)
     yaw, pitch, roll = board_orientation(pose)
-    R = rotation_matrix(yaw, pitch, roll)
+    cam_pos, R_cw = camera_world_pose(pose)
+    distance = zone_distance(pose["name"])
 
-    far_m = max(1.5, distance * 1.25)
-    draw_frustum(ax, far_m=far_m)
-    draw_board_3d(ax, pos, R)
+    draw_wall_and_board(ax)
+    draw_camera_3d(ax, cam_pos, R_cw)
 
-    # Camera marker
-    ax.scatter([0], [0], [0], color="red", s=40, zorder=10)
-    ax.text(0, 0, 0.05, "camera", color="red", fontsize=8, zorder=10)
+    # Light line from camera apex to board centre to show aim
+    ax.plot([cam_pos[0], 0],
+            [cam_pos[2], 0],
+            [cam_pos[1], 0],
+            color="red", lw=0.5, ls=":", alpha=0.5)
 
-    extent = max(1.2, distance * 1.4)
-    ax.set_xlim(-extent / 2, extent / 2)
-    ax.set_ylim(0, extent)
-    ax.set_zlim(-extent / 3, extent / 3)
+    # Axis limits — span from wall (Z=0) to a bit past the camera
+    extent_z = max(1.5, abs(cam_pos[2]) * 1.25, distance * 1.25)
+    extent_xy = max(1.2, abs(cam_pos[0]) * 1.8, abs(cam_pos[1]) * 1.8, 1.0)
+    ax.set_xlim(-extent_xy, extent_xy)
+    ax.set_ylim(0, extent_z)
+    ax.set_zlim(-extent_xy / 1.5, extent_xy / 1.5)
     ax.set_xlabel("X — right (m)", fontsize=8)
-    ax.set_ylabel("Z — depth (m)", fontsize=8)
+    ax.set_ylabel("Z — depth from wall (m)", fontsize=8)
     ax.set_zlabel("Y — up (m)", fontsize=8)
     ax.tick_params(labelsize=7)
-    ax.view_init(elev=20, azim=-65)
-    ax.set_title(f"3D geometry — yaw {yaw:+.0f}°, pitch {pitch:+.0f}°, roll {roll:+.0f}°",
-                 fontsize=9)
+    ax.view_init(elev=15, azim=-70)
+    ax.set_title(
+        f"Board on wall (origin) — Camera at "
+        f"({cam_pos[0]:+.2f}, {cam_pos[1]:+.2f}, {cam_pos[2]:+.2f}) m\n"
+        f"yaw {yaw:+.0f}°, pitch {pitch:+.0f}°, roll {roll:+.0f}° "
+        f"(board-in-camera frame)",
+        fontsize=9)
 
 
 # =============================================================================
@@ -268,40 +339,65 @@ def draw_frame_overlay(ax, pose, frame_w=1280, frame_h=720):
 
 
 def draw_topdown(ax, pose):
-    name = pose["name"]
-    distance = zone_distance(name)
-    pos = board_position_from_region(pose["region"], distance)
-    yaw, pitch, roll = board_orientation(pose)
-    R = rotation_matrix(yaw, pitch, roll)
+    """Floor-plan view (board-fixed): wall at top, operator/camera below.
 
-    # Camera
-    ax.scatter([0], [0], color="red", s=60, zorder=5)
-    ax.annotate("camera", (0, 0), xytext=(5, -15), textcoords="offset points",
-                fontsize=8, color="red")
+    - Wall is the horizontal line at Y=0 (top of plot, since we invert Y).
+    - Board sits on the wall at X=0.
+    - Camera position is at (X, Z) in world; we plot it at (X, -Z) so positive
+      depth from wall reads as "down" in the plot — feels like a floor plan
+      with the operator standing at the bottom.
+    - Camera's facing direction is drawn as an arrow from its position.
+    """
+    distance = zone_distance(pose["name"])
+    cam_pos, R_cw = camera_world_pose(pose)
 
-    # FOV cone (top-down: X vs Z)
+    far_depth = max(1.5, abs(cam_pos[2]) * 1.4, distance * 1.4)
+    plot_w_half = max(1.5, abs(cam_pos[0]) * 2.0, 1.5)
+
+    # Wall — horizontal line at the top of plot (depth=0)
+    ax.axhline(y=0, color="dimgray", lw=2.0)
+    ax.fill_between([-plot_w_half, plot_w_half], 0, -0.05,
+                     facecolor="lightgray", alpha=0.5, edgecolor=None)
+    # Board on wall — short bold segment at X=0
+    bw = BOARD_W_M / 2
+    ax.plot([-bw, +bw], [0, 0], color="tab:blue", lw=5)
+    ax.text(0, 0.03, "board", fontsize=7, ha="center", color="tab:blue")
+
+    # Camera position (plotted at depth = -cam_pos[2] so "down in plot = far from wall")
+    cam_x = cam_pos[0]
+    cam_depth = cam_pos[2]
+    ax.scatter([cam_x], [cam_depth], color="red", s=70, zorder=5)
+    ax.annotate("camera", (cam_x, cam_depth), xytext=(7, -2),
+                textcoords="offset points", fontsize=8, color="red")
+
+    # Camera's optical-axis direction in world (R_cw[:, 2]) — show as an arrow
+    fx = R_cw[0, 2]  # X component of camera's forward axis in world
+    fz = R_cw[2, 2]  # Z component
+    arrow_len = 0.35
+    ax.annotate("", xy=(cam_x + fx * arrow_len, cam_depth + fz * arrow_len),
+                xytext=(cam_x, cam_depth),
+                arrowprops=dict(arrowstyle="->", color="red", lw=1.5))
+
+    # Camera FOV cone — project the world frustum to the top-down plane
     tan_h = np.tan(np.radians(HFOV_DEG / 2))
-    far_z = max(1.5, distance * 1.4)
-    ax.plot([0, far_z * tan_h], [0, far_z], color="gray", lw=0.7)
-    ax.plot([0, -far_z * tan_h], [0, far_z], color="gray", lw=0.7)
-    ax.plot([-far_z * tan_h, far_z * tan_h], [far_z, far_z],
-            color="gray", lw=0.5, ls=":")
+    fov_len = max(distance * 1.1, 1.2)
+    # Two corner rays in camera-local: (+/- tan_h, 0, 1) at unit depth
+    for sign in (-1, +1):
+        ray_local = np.array([sign * tan_h, 0, 1]) * fov_len
+        ray_world = R_cw @ ray_local + cam_pos
+        ax.plot([cam_x, ray_world[0]], [cam_depth, ray_world[2]],
+                color="red", lw=0.5, alpha=0.4)
 
-    # Board projection onto top-down plane — show as a line segment along
-    # the board's local X axis (rotated by yaw)
-    hw = BOARD_W_M / 2
-    edge_local = np.array([[-hw, 0, 0], [+hw, 0, 0]])
-    edge_world = (R @ edge_local.T).T + pos
-    ax.plot(edge_world[:, 0], edge_world[:, 2], color="tab:blue", lw=4)
-    ax.scatter([pos[0]], [pos[2]], color="tab:blue", s=30, zorder=4)
-
-    ax.set_xlim(-far_z * tan_h * 1.15, far_z * tan_h * 1.15)
-    ax.set_ylim(-0.1, far_z * 1.05)
-    ax.set_xlabel("X (m, right)", fontsize=8)
-    ax.set_ylabel("Z (m, depth)", fontsize=8)
+    # Axis setup — invert Y so wall (depth=0) is at the top
+    ax.set_xlim(-plot_w_half, plot_w_half)
+    ax.set_ylim(far_depth * 1.05, -0.15)  # inverted: large depth at bottom
+    ax.set_xlabel("X — right (m)", fontsize=8)
+    ax.set_ylabel("depth from wall (m)", fontsize=8)
     ax.tick_params(labelsize=7)
     ax.set_aspect("equal")
-    ax.set_title("Top-down (camera looks +Z)", fontsize=9)
+    ax.set_title("Floor plan — wall at top, board fixed, camera moves",
+                  fontsize=9)
+    ax.grid(True, alpha=0.3)
     ax.grid(True, alpha=0.3)
 
 
@@ -441,38 +537,44 @@ def render_pose_page(pdf, pose, pose_idx):
                  style="italic", va="top")
     ax_text.text(0, 0.18, pose["detail"], fontsize=7, color="gray", va="top")
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=(0.0, 0.0, 1.0, 0.96))
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
 
 
 def render_overview_page(pdf, poses):
-    """Single page showing all 40 poses as top-down thumbnails."""
+    """Single page showing all 40 camera positions as top-down thumbnails.
+
+    Wall is the line at top of each thumbnail; board sits at X=0 on it.
+    The camera position for each pose is shown as a red dot with a short
+    arrow indicating its aim direction.
+    """
     fig, axes = plt.subplots(4, 10, figsize=(16, 7), constrained_layout=True)
-    fig.suptitle("All 40 poses — top-down overview", fontsize=14, fontweight="bold")
+    fig.suptitle("All 40 poses — board fixed on wall, camera positions",
+                  fontsize=14, fontweight="bold")
     for i, pose in enumerate(poses):
         ax = axes.flat[i]
-        # Mini top-down without labels
-        name = pose["name"]
-        distance = zone_distance(name)
-        pos = board_position_from_region(pose["region"], distance)
-        yaw, _, _ = board_orientation(pose)
-        R = rotation_matrix(yaw, 0, 0)
-        hw = BOARD_W_M / 2
-        edge_local = np.array([[-hw, 0, 0], [+hw, 0, 0]])
-        edge_world = (R @ edge_local.T).T + pos
-        tan_h = np.tan(np.radians(HFOV_DEG / 2))
-        far_z = 3.8
-        ax.plot([0, far_z * tan_h], [0, far_z], color="lightgray", lw=0.5)
-        ax.plot([0, -far_z * tan_h], [0, far_z], color="lightgray", lw=0.5)
-        ax.scatter([0], [0], color="red", s=15)
-        ax.plot(edge_world[:, 0], edge_world[:, 2], color="tab:blue", lw=2)
-        ax.set_xlim(-3.8 * tan_h, 3.8 * tan_h)
-        ax.set_ylim(-0.1, far_z)
+        cam_pos, R_cw = camera_world_pose(pose)
+        # Wall at top
+        ax.axhline(y=0, color="dimgray", lw=1.2)
+        bw = BOARD_W_M / 2
+        ax.plot([-bw, +bw], [0, 0], color="tab:blue", lw=2.5)
+        # Camera
+        ax.scatter([cam_pos[0]], [cam_pos[2]], color="red", s=20, zorder=5)
+        # Arrow showing camera aim direction
+        fx, fz = R_cw[0, 2], R_cw[2, 2]
+        arrow_len = 0.25
+        ax.annotate("", xy=(cam_pos[0] + fx * arrow_len,
+                             cam_pos[2] + fz * arrow_len),
+                    xytext=(cam_pos[0], cam_pos[2]),
+                    arrowprops=dict(arrowstyle="->", color="red", lw=0.8))
+        # Bounds — accommodate FAR poses (~3.5 m camera depth)
+        ax.set_xlim(-1.8, 1.8)
+        ax.set_ylim(4.0, -0.2)  # inverted Y so wall is at top
         ax.set_aspect("equal")
         ax.set_xticks([])
         ax.set_yticks([])
-        short = name.split("] ")[1] if "] " in name else name
+        short = pose["name"].split("] ")[1] if "] " in pose["name"] else pose["name"]
         ax.set_title(f"{i+1}. {short}", fontsize=6)
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
