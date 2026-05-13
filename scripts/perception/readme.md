@@ -9,16 +9,18 @@ once stereo calibration is integrated.
 
 - **`yolo_detect.py`** — runs YOLO on the Hailo-8 NPU against the *left half*
   of the AR0144 stereo stream. No calibration required, no depth, no fusion.
-  Validates the detection half of the perception pipeline in isolation so the
-  stereo-depth layer can be added later without bringing up two unknowns at
-  once.
+  Validates the detection half of the perception pipeline in isolation.
+- **`depth_detect.py`** — full handheld-flight perception loop. Imports the
+  YOLO scaffolding from `yolo_detect.py` and adds stereo rectification +
+  SGBM disparity (half-resolution for compute headroom on the Pi) + depth
+  lookup at each detected bbox centroid. Annotates each detection with
+  `<class> <score> @ <distance>m`. Gated on a valid stereo calibration
+  `.npz` from `scripts/ar0144/guided_calibration.py`.
 
 ## What's NOT here yet
 
-- Stereo rectification — gated on completing `scripts/ar0144/guided_calibration.py`
-- SGBM depth estimation — gated on calibration `.npz` output
-- Depth-fused detections ("`person` at 1.4 m") — gated on the two above
-- MAVLink integration / decision logic — gated on depth fusion
+- MAVLink integration / decision logic — gated on depth fusion verified handheld
+- Path-planning / collision-avoidance commanding — gated on MAVLink
 
 ## Prerequisites
 
