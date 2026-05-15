@@ -32,28 +32,31 @@ AutonoBird is an AI-driven autonomous drone built on a HolyBro QUAV250 carbon fi
 
 Each subsystem lives under `scripts/<name>/` with its own setup script, systemd service (where applicable), config template, and local docs. Subsystems are independent — failure of one (voice assistant, for example) does not affect the others.
 
-| Subsystem | Path | Purpose |
-|---|---|---|
-| Flight controller | `scripts/flight-controller/` | Pixhawk 6C Mini configuration, port assignments, build notes |
-| Stereo depth (AR0144) | `scripts/ar0144/` | USB stereo camera calibration and depth estimation |
-| Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative (replaced by AR0144 — retained for reference) |
-| Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline |
-| Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) |
-| Boot IP notifier | `scripts/email-ip-notifier/` | Emails the drone's IP on boot for headless SSH access |
+| Subsystem | Path | Purpose | Status |
+|---|---|---|---|
+| Flight controller | `scripts/flight-controller/` | Pixhawk 6C Mini configuration, port assignments, build notes | Stage 2 closed; MAVLink bridge pending |
+| Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
+| Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`) | Running end-to-end at 6.8 fps |
+| Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative — superseded by AR0144 | Reference only |
+| Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline | Standalone subsystem |
+| Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) | Standalone subsystem |
+| Boot IP notifier | `scripts/email-ip-notifier/` | Emails the drone's IP on boot for headless SSH access | Standalone subsystem |
 
-## Data flow (runtime perception loop — target)
+## Data flow (runtime perception loop — implemented)
 
-Once the software stack is complete, the runtime perception loop will flow as follows:
+The handheld perception loop runs end-to-end on the calibration / perception rig (Pi 5 + AI HAT+ + AR0144 + UPS HAT). Measured stage-by-stage:
 
-1. **AR0144 stereo camera** captures side-by-side 2560×720 global-shutter frames over USB to the Pi.
-2. **Pi 5** splits the frame to left/right, rectifies using pre-computed calibration maps, computes disparity via OpenCV SGBM.
-3. **Depth map** is segmented into threat zones.
-4. **HAILO AI HAT+** runs YOLO object detection on the same frames.
-5. Perception outputs feed a **path-planning** module (A* / RRT*) running on the Pi.
-6. Commands are streamed to the **Pixhawk** over MAVLink (UART or Ethernet).
-7. Pixhawk executes flight commands and returns telemetry to the Pi and to the ground station via the **SiK 433 MHz telemetry radio**.
+1. **AR0144 stereo camera** captures side-by-side 2560×720 MJPEG over USB 2.0 (~13 fps cap from the camera's USB controller).
+2. **Pi 5** splits the frame, rectifies each half using cv2.remap with calibration maps from `stereo_calibration.npz`. ~5 ms.
+3. **SGBM disparity** runs on the rectified halves at half resolution (640×360) — Pi 5 CPU, ~76 ms. Half-res is a pre-emptive optimisation; full-res would saturate the loop.
+4. **Disparity → depth** via Q-matrix focal length + 52 mm baseline. Median-of-5×5-patch lookup at each detection bbox centroid.
+5. **HAILO AI HAT+ (Hailo-8)** runs YOLOv8n on the rectified left frame letterboxed to 640×640 — ~18.5 ms end-to-end (NPU + HailoRT overhead).
+6. **Fusion**: each detection annotated with `<class> <score> @ <depth>m`.
+7. **End-to-end loop**: 138 ms / 6.8 fps. Under the 250 ms NFR1 target.
 
-Success criteria for this loop are defined in the dissertation and the [hardware](hardware.md) doc.
+Pending (not yet implemented): path planner (A* / RRT*) consuming the perception output, and MAVLink bridge streaming offboard commands to the Pixhawk. ArduPilot SITL is the authorised path for validating these without physical flight.
+
+Success criteria for this loop are defined in the dissertation (§ 6.1 / § 6.2) and the [hardware](hardware.md) doc.
 
 ## Control paths
 

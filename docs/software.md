@@ -11,13 +11,30 @@ Not code — documentation and ArduPilot parameters for the Pixhawk 6C Mini. Por
 - Path: `scripts/flight-controller/`
 - Docs: [`readme.md`](../scripts/flight-controller/readme.md)
 
-### AR0144 stereo depth
+### AR0144 stereo calibration
 
-USB stereo camera calibration and depth estimation. Two calibration scripts: `guided_calibration.py` (recommended, 40-pose face-scan style across 4 distance zones) and `basic_calibration.py` (manual SPACE-to-capture). Uses OpenCV SGBM stereo matching.
+USB stereo camera calibration. Two calibration scripts: `guided_calibration.py` (recommended, 40-pose face-scan style across 4 distance zones, with manifest-based smart resume) and `basic_calibration.py` (manual SPACE-to-capture). Uses OpenCV SGBM stereo matching. Also includes `visualize_poses.py` — generates a per-pose 3D-geometry reference PDF showing board-on-wall + camera-position for each of the 40 poses.
+
+Current calibration: session `cal-4` produced 2026-05-15 with 28 stereo pairs, RMS reprojection error 1.10 px, baseline 51.92 mm (matches AR0144 52 mm spec). Calibration file at `stereo_calibration_data/stereo_calibration.npz` is consumed by `scripts/perception/depth_detect.py`.
 
 - Path: `scripts/ar0144/`
-- Entry points: `guided_calibration.py {capture|calibrate|depth|all}`
+- Entry points: `guided_calibration.py {preview|capture|calibrate|depth|all}`, `visualize_poses.py`
 - Docs: [`steps.md`](../scripts/ar0144/steps.md), [`pose-list.md`](../scripts/ar0144/pose-list.md)
+
+### Perception (YOLO + depth fusion)
+
+Integrated handheld perception pipeline running on the Pi 5 + AI HAT+ (Hailo-8) rig:
+
+- `yolo_detect.py` — YOLOv8n on Hailo-8 against the AR0144 left frame only. No calibration needed; validates the detection half of the pipeline in isolation.
+- `depth_detect.py` — full pipeline: capture → split → rectify → SGBM half-res → YOLO detection → depth-fused bbox annotations. Requires `cal-4` calibration `.npz` to exist.
+
+Current measured performance: 6.8 fps end-to-end / 138 ms loop, with 18.5 ms NPU + 76 ms SGBM. Under the dissertation's NFR1 target of <250 ms.
+
+Dedicated venv at `scripts/perception/venv` with version-pinned dependencies (`hailort 4.23` + `opencv-python<4.11` + `numpy<2` — interlocked, see subsystem readme). `hailo_platform` is symlinked from Benchy's venv. `setup.sh` creates and verifies the venv.
+
+- Path: `scripts/perception/`
+- Entry points: `yolo_detect.py`, `depth_detect.py`
+- Docs: [`readme.md`](../scripts/perception/readme.md)
 
 ### Arducam IMX519 stereo depth (legacy)
 
@@ -61,19 +78,24 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 - Exception: Arducam stereo config is a Python `CONFIG` dict at the top of `stereo_depth.py`
 - Jarvis config selects the LLM backend (`"llm_backend": "ollama"` or `"gemini"`), Whisper model size, wake word, voice, and conversation parameters
 
-## Not yet implemented
+## Status
 
-Target architecture (dissertation Ch 4) includes several components not yet written:
+| Capability | Status |
+|---|---|
+| Flight controller bring-up (ArduCopter 4.6.3, ELRS, failsafes, motor direction) | ✓ Stage 2 closed |
+| NPU selection (Benchy-driven, Hailo-8 over Hailo-10H) | ✓ Resolved |
+| AR0144 stereo calibration | ✓ cal-4, RMS 1.10 px |
+| YOLO detection on Hailo-8 | ✓ Live |
+| Stereo depth + YOLO fusion (handheld) | ✓ Live, 138 ms loop |
+| Voice assistant (Jarvis) | ✓ Standalone subsystem |
+| MAVLink bridge between Pi and Pixhawk | Pending (pymavlink or MAVSDK over USB-serial) |
+| Path planner (A*/RRT*) consuming depth + detections | Pending |
+| Perception → avoidance control loop | Pending — autonomy validation will go through ArduPilot SITL |
+| ArduPilot SITL integration | Pending |
+| First physical hover with imaging stack mounted | Deferred behind dissertation submission |
+| ROS 2 / Meshtastic / ATAK | Future work (dissertation § 6.6) |
 
-- MAVLink bridge between Pi and Pixhawk (MAVSDK or pymavlink)
-- Path planner (A* / RRT*) consuming depth maps and producing waypoints
-- Object detector on the HAILO NPU (YOLO or equivalent)
-- Perception → avoidance control loop
-- ROS 2 integration (optional, planned)
-- Meshtastic mesh-radio module (optional, planned)
-- ATAK integration (optional, planned)
-
-See dissertation Ch 5 for the implementation roadmap.
+See dissertation Ch 5 for the implementation roadmap and Ch 6 for the empirical results.
 
 ## Further reading
 
