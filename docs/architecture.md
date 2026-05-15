@@ -37,6 +37,7 @@ Each subsystem lives under `scripts/<name>/` with its own setup script, systemd 
 | Flight controller | `scripts/flight-controller/` | Pixhawk 6C Mini configuration, port assignments, build notes | Stage 2 closed; MAVLink bridge pending |
 | Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
 | Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`) | Running end-to-end at 6.8 fps |
+| ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi) | First mission flown (50 m box, all 6 items reached) |
 | Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative — superseded by AR0144 | Reference only |
 | Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline | Standalone subsystem |
 | Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) | Standalone subsystem |
@@ -54,7 +55,7 @@ The handheld perception loop runs end-to-end on the calibration / perception rig
 6. **Fusion**: each detection annotated with `<class> <score> @ <depth>m`.
 7. **End-to-end loop**: 138 ms / 6.8 fps. Under the 250 ms NFR1 target.
 
-Pending (not yet implemented): path planner (A* / RRT*) consuming the perception output, and MAVLink bridge streaming offboard commands to the Pixhawk. ArduPilot SITL is the authorised path for validating these without physical flight.
+Pending (not yet implemented): path planner (A* / RRT*) consuming the perception output, and Pi-side MAVLink bridge streaming offboard commands to either the Pixhawk (real flight) or the SITL (validation). ArduPilot SITL itself is now up — see [software.md](software.md) and `scripts/sitl/readme.md` — and a first scripted box mission has been flown autonomously, with 51.1 m × 51.1 m × 10.03 m measured against a 50 m × 50 m × 10 m target.
 
 Success criteria for this loop are defined in the dissertation (§ 6.1 / § 6.2) and the [hardware](hardware.md) doc.
 

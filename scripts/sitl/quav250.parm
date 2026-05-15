@@ -1,0 +1,59 @@
+# QUAV250 parameter overlay for ArduPilot SITL
+#
+# Applied on top of SITL's built-in Tools/autotest/default_params/copter.parm
+# so the simulation behaves like the as-built airframe described in
+# scripts/flight-controller/readme.md and the auto-memory
+# reference_ardupilot_params.md.
+#
+# Only behavior-relevant params are mirrored. Hardware-specific params
+# (SERIAL*, COMPASS_OFS/PRIO/ORIENT, MOT_PWM_TYPE, SERVO_BLH_*, BATT_VOLT_PIN
+# / CURR_PIN / MULT / AMP_PERVLT, BRD_SAFETY_DEFLT, AHRS_ORIENTATION) are
+# intentionally omitted -- they are meaningless or harmful in SITL, whose
+# IMU/compass/ESC/RC subsystems are simulated and need their own defaults.
+#
+# Launch with:
+#   sim_vehicle.py -v ArduCopter -f quad --add-param-file=<path>/quav250.parm --console --map
+#
+# -f quad selects the X-frame physics model that matches FRAME_TYPE=1 below.
+
+# Frame
+FRAME_CLASS     1
+FRAME_TYPE      1
+
+# Battery (4S 1500 mAh CNHL) -- thrust scaling + capacity
+MOT_BAT_VOLT_MIN  14.0
+MOT_BAT_VOLT_MAX  16.8
+BATT_CAPACITY     1500
+
+# Battery failsafe -- DISABLED IN SITL.
+#
+# SITL's simulated battery sits at ~12.6 V regardless of SIM_BATT_VOLTAGE
+# (the param exists and accepts a new value, but the sim battery model in
+# this ArduPilot build does not pick it up). A 4S-tuned BATT_LOW_VOLT=14.0
+# would therefore latch the low-voltage failsafe at boot and block arming.
+#
+# SITL is the navigation / autonomy validation tool. Battery failsafe
+# behaviour is validated on the real airframe instead -- the actual
+# 4S thresholds live in scripts/flight-controller/readme.md and the
+# reference_ardupilot_params auto-memory.
+BATT_LOW_VOLT     0
+BATT_CRT_VOLT     0
+BATT_LOW_TIMER    10
+BATT_FS_LOW_ACT   1
+BATT_FS_CRT_ACT   1
+BATT_FS_VOLTSRC   0
+
+# GCS failsafe disabled for bench / sim work (matches current FC state).
+# Re-enable before any autonomy test that depends on link-loss behaviour.
+FS_GCS_ENABLE     0
+
+# Flight-mode switch: SB (3-pos) on CH6, same assignments as the real Pocket+RP4TD setup.
+# FLTMODE3 / FLTMODE5 are unreachable with a single 3-pos switch and are left as SITL defaults.
+FLTMODE_CH        6
+FLTMODE1          0
+FLTMODE4          2
+FLTMODE6          6
+
+# Throttle failsafe (RC link loss -> RTL)
+FS_THR_ENABLE     1
+FS_THR_VALUE      975

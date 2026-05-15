@@ -36,6 +36,18 @@ Dedicated venv at `scripts/perception/venv` with version-pinned dependencies (`h
 - Entry points: `yolo_detect.py`, `depth_detect.py`
 - Docs: [`readme.md`](../scripts/perception/readme.md)
 
+### ArduPilot SITL (QUAV250 overlay)
+
+Software-in-the-loop simulation of the ArduCopter flight controller, running on the dev workstation (x86_64, not the Pi). Exposes MAVLink over TCP exactly like the real Pixhawk over USB-serial, so MAVProxy, QGroundControl, Mission Planner, or a Pi-side companion-computer bridge can connect identically. Authorised path for validating autonomy without a physical hover.
+
+ArduPilot itself lives out-of-tree at `~/Documents/ardupilot` — `scripts/sitl/` contains only the QUAV250 overlay (`quav250.parm`: frame, FLTMODE assignments, throttle failsafe, battery thrust scaling — hardware-specific params intentionally omitted), a launch wrapper (`run_sitl.sh`), and the mission catalogue (`missions/`).
+
+First scripted mission flown 2026-05-15: 50 m × 50 m box at 10 m AGL, all six mission items (NAV_TAKEOFF, 4 NAV_WAYPOINT, NAV_RTL) reached. `.tlog` analysis: 51.1 m × 51.1 m extent, 10.03 m peak altitude.
+
+- Path: `scripts/sitl/`
+- Entry point: `run_sitl.sh` (wraps `sim_vehicle.py -v ArduCopter -f quad --add-param-file=quav250.parm --console --map`)
+- Docs: [`readme.md`](../scripts/sitl/readme.md), [`missions/readme.md`](../scripts/sitl/missions/readme.md)
+
 ### Arducam IMX519 stereo depth (legacy)
 
 Quad-camera kit using Picamera2 with I2C channel switching. Replaced by AR0144 due to rolling-shutter artefacts and GPIO conflict with the HAILO AI HAT+, but retained for reference and possible future use on a larger airframe.
@@ -88,10 +100,10 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 | YOLO detection on Hailo-8 | ✓ Live |
 | Stereo depth + YOLO fusion (handheld) | ✓ Live, 138 ms loop |
 | Voice assistant (Jarvis) | ✓ Standalone subsystem |
-| MAVLink bridge between Pi and Pixhawk | Pending (pymavlink or MAVSDK over USB-serial) |
+| ArduPilot SITL bring-up (QUAV250 overlay) | ✓ First box mission flown |
+| MAVLink bridge between Pi and SITL / Pixhawk | Pending (pymavlink or MAVSDK; same code over TCP or USB-serial) |
 | Path planner (A*/RRT*) consuming depth + detections | Pending |
-| Perception → avoidance control loop | Pending — autonomy validation will go through ArduPilot SITL |
-| ArduPilot SITL integration | Pending |
+| Perception → bridge → SITL closed loop | Pending — autonomy validation track |
 | First physical hover with imaging stack mounted | Deferred behind dissertation submission |
 | ROS 2 / Meshtastic / ATAK | Future work (dissertation § 6.6) |
 
