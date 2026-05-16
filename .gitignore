@@ -8,3 +8,4 @@ resources/
 *.hef
 # HailoRT runtime log
 hailort.log
+/scripts/sitl/*.txt

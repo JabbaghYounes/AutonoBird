@@ -79,6 +79,7 @@ class VehicleState:
     alt_rel: Optional[float] = None
     heading_deg: Optional[float] = None
     ground_speed: Optional[float] = None
+    climb_rate: Optional[float] = None  # m/s, +up, from VFR_HUD (autopilot-filtered)
     gps_fix: Optional[int] = None
     satellites: Optional[int] = None
     battery_v: Optional[float] = None
@@ -479,6 +480,9 @@ class Vehicle:
         elif t == "VFR_HUD":
             with self._state_lock:
                 self._state.ground_speed = msg.groundspeed
+                # `climb` is the autopilot's own filtered climb rate (m/s, +up).
+                # Used by the FSM in preference to differentiating polled altitude.
+                self._state.climb_rate = msg.climb
         elif t == "GPS_RAW_INT":
             with self._state_lock:
                 self._state.gps_fix = msg.fix_type

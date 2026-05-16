@@ -1,0 +1,10 @@
+{
+  "connection_uri": "udpin:127.0.0.1:14550",
+  "source_system": 255,
+  "heartbeat_timeout": 30.0,
+  "state_machine_poll_hz": 10,
+  "_comment": {
+    "connection_uri": "Forwarded from the flight-controller bridge defaults. Override only if SITL / Pixhawk is on a different transport.",
+    "state_machine_poll_hz": "How often the FSM re-evaluates vehicle state for transitions (Hz). 10 is plenty — vehicle telemetry only updates at ~4-7 Hz anyway."
+  }
+}
