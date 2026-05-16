@@ -133,6 +133,8 @@ class Vehicle:
         # them and upload_mission blocks forever.
         self._mission_requests: queue.Queue[Any] = queue.Queue()
         self._mission_acks: queue.Queue[Any] = queue.Queue()
+        # Same pattern for PARAM_VALUE — set_param needs the reader-fed echo.
+        self._param_values: queue.Queue[Any] = queue.Queue()
         self._stop_flag = threading.Event()
         self._reader: Optional[threading.Thread] = None
         self._heartbeat: Optional[threading.Thread] = None
@@ -352,6 +354,44 @@ class Vehicle:
             float(yaw_rate),
         )
 
+    def set_param(self, name: str, value: float, timeout: float = 5.0) -> None:
+        """Set a parameter on the autopilot and verify the echoed value.
+
+        Used for runtime tweaks (e.g. SIM_WIND_SPD during a sweep). The
+        echoed PARAM_VALUE is consumed from the reader-fed queue rather
+        than via raw recv_match — same pattern as upload_mission.
+        """
+        self._require_connected()
+        while not self._param_values.empty():
+            try:
+                self._param_values.get_nowait()
+            except queue.Empty:
+                break
+        self._mav.mav.param_set_send(
+            self._target_system,
+            self._target_component,
+            name.encode("ascii"),
+            float(value),
+            mavutil.mavlink.MAV_PARAM_TYPE_REAL32,
+        )
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                pv = self._param_values.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            param_id = pv.param_id
+            if isinstance(param_id, bytes):
+                param_id = param_id.decode("ascii", errors="replace")
+            if param_id.rstrip("\x00") != name:
+                continue
+            if abs(pv.param_value - float(value)) < 1e-3:
+                return
+            raise BridgeError(
+                f"PARAM_SET {name}={value} but autopilot echoed {pv.param_value}"
+            )
+        raise BridgeError(f"No PARAM_VALUE for {name} within {timeout}s")
+
     def upload_mission(self, items: list[dict]) -> None:
         """Upload a waypoint mission via the classic mission-protocol handshake.
 
@@ -519,6 +559,8 @@ class Vehicle:
             self._mission_requests.put(msg)
         elif t == "MISSION_ACK":
             self._mission_acks.put(msg)
+        elif t == "PARAM_VALUE":
+            self._param_values.put(msg)
         elif t == "COMMAND_ACK":
             self._acks.put(msg)
 

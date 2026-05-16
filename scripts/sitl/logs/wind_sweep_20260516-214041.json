@@ -1,0 +1,189 @@
+{
+  "test": "wind_disturbance_sweep",
+  "timestamp": "20260516-214041",
+  "summary": {
+    "wind_dir_deg": 270.0,
+    "wind_levels_ms": [
+      0.0,
+      5.0,
+      10.0,
+      15.0
+    ],
+    "target_n_m": 50.03771699013234,
+    "target_e_m": 50.055284869243614,
+    "target_alt_m": 10.0,
+    "horizontal_bound_m": 0.5,
+    "vertical_bound_m": 0.5,
+    "extent_tolerance_pct": 5.0
+  },
+  "levels": [
+    {
+      "wind_speed_ms": 0.0,
+      "hover": {
+        "wind_speed_ms": 0.0,
+        "n_samples": 293,
+        "duration_s": 29.95459747314453,
+        "max_horizontal_drift_m": 0.03627174380534324,
+        "rms_horizontal_drift_m": 0.020589804142514597,
+        "max_vertical_drift_m": 0.09600000000000009,
+        "rms_vertical_drift_m": 0.047765389386125755,
+        "horizontal_pass": true,
+        "vertical_pass": true
+      },
+      "missions": [
+        {
+          "wind_speed_ms": 0.0,
+          "run_index": 1,
+          "duration_s": 67.72689533233643,
+          "n_extent_m": 51.18302473452398,
+          "e_extent_m": 51.23383784307263,
+          "peak_alt_m": 10.019,
+          "n_extent_err_pct": 2.2888888887906376,
+          "e_extent_err_pct": 2.354502580312301,
+          "alt_err_pct": 0.19000000000000128,
+          "completed_mission": true,
+          "pass_extents": true
+        },
+        {
+          "wind_speed_ms": 0.0,
+          "run_index": 2,
+          "duration_s": 67.71167540550232,
+          "n_extent_m": 51.17190524172958,
+          "e_extent_m": 51.251973271990856,
+          "peak_alt_m": 10.022,
+          "n_extent_err_pct": 2.266666666308759,
+          "e_extent_err_pct": 2.390733377850667,
+          "alt_err_pct": 0.22000000000000242,
+          "completed_mission": true,
+          "pass_extents": true
+        }
+      ]
+    },
+    {
+      "wind_speed_ms": 5.0,
+      "hover": {
+        "wind_speed_ms": 5.0,
+        "n_samples": 292,
+        "duration_s": 29.90128803253174,
+        "max_horizontal_drift_m": 0.03793787450482436,
+        "rms_horizontal_drift_m": 0.025125478541594002,
+        "max_vertical_drift_m": 0.028999999999999915,
+        "rms_vertical_drift_m": 0.025915629705134908,
+        "horizontal_pass": true,
+        "vertical_pass": true
+      },
+      "missions": [
+        {
+          "wind_speed_ms": 5.0,
+          "run_index": 1,
+          "duration_s": 68.51123547554016,
+          "n_extent_m": 51.08294930016448,
+          "e_extent_m": 51.22476959046091,
+          "peak_alt_m": 10.02,
+          "n_extent_err_pct": 2.088888888032732,
+          "e_extent_err_pct": 2.3363861064266613,
+          "alt_err_pct": 0.19999999999999574,
+          "completed_mission": true,
+          "pass_extents": true
+        },
+        {
+          "wind_speed_ms": 5.0,
+          "run_index": 2,
+          "duration_s": 67.69850993156433,
+          "n_extent_m": 50.99399335938946,
+          "e_extent_m": 51.17943003813609,
+          "peak_alt_m": 10.015,
+          "n_extent_err_pct": 1.9111111113356753,
+          "e_extent_err_pct": 2.245807154687086,
+          "alt_err_pct": 0.15000000000000568,
+          "completed_mission": true,
+          "pass_extents": true
+        }
+      ]
+    },
+    {
+      "wind_speed_ms": 10.0,
+      "hover": {
+        "wind_speed_ms": 10.0,
+        "n_samples": 293,
+        "duration_s": 29.969449758529663,
+        "max_horizontal_drift_m": 0.042546584959738704,
+        "rms_horizontal_drift_m": 0.025224903434692296,
+        "max_vertical_drift_m": 0.02799999999999958,
+        "rms_vertical_drift_m": 0.02492726620956633,
+        "horizontal_pass": true,
+        "vertical_pass": true
+      },
+      "missions": [
+        {
+          "wind_speed_ms": 10.0,
+          "run_index": 1,
+          "duration_s": 69.77447414398193,
+          "n_extent_m": 50.882798432235546,
+          "e_extent_m": 51.08875124922027,
+          "peak_alt_m": 10.029,
+          "n_extent_err_pct": 1.688888888095877,
+          "e_extent_err_pct": 2.0646498819781374,
+          "alt_err_pct": 0.28999999999999915,
+          "completed_mission": true,
+          "pass_extents": true
+        },
+        {
+          "wind_speed_ms": 10.0,
+          "run_index": 2,
+          "duration_s": 69.72072219848633,
+          "n_extent_m": 50.96063488100626,
+          "e_extent_m": 51.18849835389571,
+          "peak_alt_m": 10.024,
+          "n_extent_err_pct": 1.8444444438900403,
+          "e_extent_err_pct": 2.2639237547290376,
+          "alt_err_pct": 0.23999999999999133,
+          "completed_mission": true,
+          "pass_extents": true
+        }
+      ]
+    },
+    {
+      "wind_speed_ms": 15.0,
+      "hover": {
+        "wind_speed_ms": 15.0,
+        "n_samples": 293,
+        "duration_s": 29.93817687034607,
+        "max_horizontal_drift_m": 0.11755443054613035,
+        "rms_horizontal_drift_m": 0.0836904920649005,
+        "max_vertical_drift_m": 0.03200000000000003,
+        "rms_vertical_drift_m": 0.027369236111448664,
+        "horizontal_pass": true,
+        "vertical_pass": true
+      },
+      "missions": [
+        {
+          "wind_speed_ms": 15.0,
+          "run_index": 1,
+          "duration_s": 70.52978754043579,
+          "n_extent_m": 50.83832046184804,
+          "e_extent_m": 51.42426494446576,
+          "peak_alt_m": 10.026,
+          "n_extent_err_pct": 1.5999999997473628,
+          "e_extent_err_pct": 2.7349361387079325,
+          "alt_err_pct": 0.259999999999998,
+          "completed_mission": true,
+          "pass_extents": true
+        },
+        {
+          "wind_speed_ms": 15.0,
+          "run_index": 2,
+          "duration_s": 70.73349642753601,
+          "n_extent_m": 50.860559447436835,
+          "e_extent_m": 51.36078926398165,
+          "peak_alt_m": 10.028,
+          "n_extent_err_pct": 1.6444444447111053,
+          "e_extent_err_pct": 2.608124992492455,
+          "alt_err_pct": 0.2800000000000047,
+          "completed_mission": true,
+          "pass_extents": true
+        }
+      ]
+    }
+  ]
+}
