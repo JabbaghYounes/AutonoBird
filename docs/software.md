@@ -51,6 +51,24 @@ First scripted mission flown 2026-05-15: 50 m × 50 m box at 10 m AGL, all six m
 - Entry point: `run_sitl.sh` (wraps `sim_vehicle.py -v ArduCopter -f quad --add-param-file=quav250.parm --console --map`)
 - Docs: [`readme.md`](../scripts/sitl/readme.md), [`missions/readme.md`](../scripts/sitl/missions/readme.md)
 
+### Autonomy (state machine + planner + perception input)
+
+Decision-making layer above the flight-controller bridge. Sits between perception output and the bridge's `Vehicle.send_velocity_ned` API, turning detected obstacles into avoidance manoeuvres.
+
+Three modules:
+
+- `state_machine.py` — passive observer of the bridge's `Vehicle`. Nine high-level flight states (`DISCONNECTED / NO_FIX / PREARMED / ARMED_ON_GROUND / ASCENDING / AIRBORNE / DESCENDING / DISARMED_POSTFLIGHT / FAULT`), Schmitt-trigger hysteresis on the autopilot-filtered climb rate, subscriber API for downstream consumers (LED driver, voice/gesture mappers, orchestrator).
+- `planner.py` — reactive sector-based obstacle avoider. Modes: CRUISING (forward velocity) / AVOIDING (lateral sidestep) / IDLE / LANDING. Hysteresis on the obstacle distance threshold, cached perception frame to absorb perception-rate vs planner-rate mismatch, sidestep direction latched on entry.
+- `perception_source.py` — `PerceptionFrame` / `Detection` data contract plus two concrete sources: `SyntheticPerceptionSource` (in-process scripted timeline for tests) and `DepthDetectSource` (tails the JSONL file emitted by `depth_detect.py --jsonl`, supporting replay-from-start, live-tail, and real-time pacing keyed off record timestamps).
+
+Cross-subsystem imports `Vehicle` from `../flight-controller` via `sys.path`. Own venv (pymavlink + numpy).
+
+Two closed-loop SITL tests demonstrate the full chain: `test_avoidance.py` (in-process synthetic perception) and `test_avoidance_jsonl.py` (JSONL replay). Both pass on identical criteria: drone takes off, cruises north, sidesteps east on obstacle injection, resumes cruise, RTL + land. Match within noise (+22 m N / +9.6 m E across both transports).
+
+- Path: `scripts/autonomy/`
+- Entry points: `test_avoidance.py`, `test_avoidance_jsonl.py`, `make_synthetic_jsonl.py`
+- Docs: [`readme.md`](../scripts/autonomy/readme.md)
+
 ### Arducam IMX519 stereo depth (legacy)
 
 Quad-camera kit using Picamera2 with I2C channel switching. Replaced by AR0144 due to rolling-shutter artefacts and GPIO conflict with the HAILO AI HAT+, but retained for reference and possible future use on a larger airframe.
@@ -105,8 +123,11 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 | Voice assistant (Jarvis) | ✓ Standalone subsystem |
 | ArduPilot SITL bring-up (QUAV250 overlay) | ✓ First box mission flown |
 | Pi-side MAVLink bridge (`scripts/flight-controller/bridge.py`) | ✓ Live; smoke-tested against SITL |
-| Path planner (A*/RRT*) consuming depth + detections | Pending |
-| Perception → bridge → SITL closed loop | Pending — autonomy validation track |
+| Flight-state machine (`scripts/autonomy/state_machine.py`) | ✓ Live; 9 states, hysteresis on climb rate |
+| Reactive obstacle-avoidance planner (`scripts/autonomy/planner.py`) | ✓ Live; CRUISING/AVOIDING modes with hysteresis |
+| Perception → bridge → SITL closed loop | ✓ Demonstrated against synthetic + JSONL transports |
+| `depth_detect.py --jsonl` detection-event pipe | ✓ Live; autonomy `DepthDetectSource` consumes it |
+| Global path planner (A*/RRT*) on top of the reactive avoider | Pending — § 6.6 future work |
 | First physical hover with imaging stack mounted | Deferred behind dissertation submission |
 | ROS 2 / Meshtastic / ATAK | Future work (dissertation § 6.6) |
 

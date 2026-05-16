@@ -35,9 +35,10 @@ Each subsystem lives under `scripts/<name>/` with its own setup script, systemd 
 | Subsystem | Path | Purpose | Status |
 |---|---|---|---|
 | Flight controller + bridge | `scripts/flight-controller/` | Pixhawk 6C Mini configuration + port assignments + Pi-side MAVLink bridge (`bridge.py`) | Stage 2 closed; bridge live (UDP→SITL + serial→Pixhawk) |
+| Autonomy | `scripts/autonomy/` | Flight-state machine + reactive obstacle-avoidance planner + perception-input abstraction (synthetic + JSONL-tail) | Closed-loop SITL avoidance demonstrated against two perception transports |
 | Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
-| Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`) | Running end-to-end at 6.8 fps |
-| ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi) | First mission flown (50 m box, all 6 items reached) |
+| Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`); JSONL detection-event emitter for the autonomy stack | Running end-to-end at 6.8 fps; JSONL pipe wired |
+| ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi) | Box mission flown; closed-loop avoidance with planner demonstrated |
 | Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative — superseded by AR0144 | Reference only |
 | Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline | Standalone subsystem |
 | Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) | Standalone subsystem |
