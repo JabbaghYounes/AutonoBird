@@ -66,9 +66,9 @@ These would lift the §6.4 "not measured" outcomes without leaving the simulator
 
 | | Item | Pri | Notes |
 |---|---|---|---|
-| `[ ]` | **T4 hover-stability run** in SITL | 🟡 | LOITER at fixed point, log position drift over 60 s, compare to 50 cm bound. 1-day task. |
+| `[x]` | **T4 hover-stability run** in SITL | 🟡 | ✅ 2026-05-16. `scripts/autonomy/test_hover_stability.py`. 5 m hover in GUIDED auto-hold (not LOITER — LOITER in headless SITL descends without RC throttle input), 60 s @ 10 Hz, 582 samples. Max horizontal drift 0.038 m, RMS 0.019 m. Max vertical drift 0.099 m, RMS 0.054 m. Both well under the 0.5 m bound. PASS. JSON + PNG in `scripts/sitl/logs/t4_hover_20260516-185701.{json,png}`. |
 | `[ ]` | **T5 collision avoidance** in SITL | 🟡 | Requires the MAVLink bridge plus obstacles configured in SITL (e.g. via Gazebo) — depends on §1 bridge. |
-| `[ ]` | **Multi-run T6 mission replication** (10 missions) | 🟢 | Closes the FR5 provisional → full pass. Trivial scripting against existing Stage 3. |
+| `[x]` | **Multi-run T6 mission replication** (10 missions) | 🟢 | ✅ 2026-05-16. `scripts/autonomy/test_mission_replicate.py`. 10 sequential box_50m runs against one SITL instance, mean ± σ extents over all 10: N=51.12±0.07 m (+2.2%), E=51.17±0.06 m (+2.2%), peak alt=10.02±0.00 m (+0.2%), duration 67.9 s/run uniform. 100% pass rate at ±5% tolerance. Required a bridge fix — `upload_mission` now routes `MISSION_REQUEST(_INT)` and `MISSION_ACK` through dedicated reader-fed queues (the original raw `recv_match` raced the reader thread and dropped requests). JSON + PNG at `scripts/sitl/logs/t6_replicate_20260516-203126.{json,png}`. Note: `MISSION_ITEM_REACHED` events arrive patchily under UDP loopback (some runs report 3-6 of 6 items) but flight execution is correct — extents + duration confirm the full box was flown each time. Closes FR5/T6 from "provisionally supported" to "supported (10/10)". |
 | `[ ]` | **Wind / disturbance rejection** runs | 🟢 | `SIM_WIND_SPD` parameter sweeps. |
 
 ## 6. Hardware flight (Stage 4) — when ready

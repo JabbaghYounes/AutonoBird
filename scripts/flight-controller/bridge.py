@@ -128,6 +128,11 @@ class Vehicle:
         self._state = VehicleState()
         self._events: queue.Queue[VehicleEvent] = queue.Queue()
         self._acks: queue.Queue[Any] = queue.Queue()
+        # Mission-protocol messages must be queued by the reader (not picked
+        # up via raw recv_match) — otherwise the reader silently consumes
+        # them and upload_mission blocks forever.
+        self._mission_requests: queue.Queue[Any] = queue.Queue()
+        self._mission_acks: queue.Queue[Any] = queue.Queue()
         self._stop_flag = threading.Event()
         self._reader: Optional[threading.Thread] = None
         self._heartbeat: Optional[threading.Thread] = None
@@ -353,29 +358,37 @@ class Vehicle:
         Each item dict must contain: seq, frame, command, current,
         autocontinue, param1..param4, x (lat * 1e7 or local), y, z.
 
-        For now this is a minimal implementation; more elaborate FTP-style
-        uploads can be added if needed.
+        Consumes MISSION_REQUEST(_INT) and MISSION_ACK from queues populated
+        by the reader thread — using raw recv_match here would race with the
+        reader and deadlock.
         """
         self._require_connected()
-        # Clear existing mission
+
+        # Drain any stale mission-protocol messages from a prior upload.
+        for q in (self._mission_requests, self._mission_acks):
+            while not q.empty():
+                try:
+                    q.get_nowait()
+                except queue.Empty:
+                    break
+
+        # Clear existing mission, then send count to start the upload.
         self._mav.mav.mission_clear_all_send(
             self._target_system, self._target_component
         )
-        # Send count
         self._mav.mav.mission_count_send(
             self._target_system, self._target_component, len(items)
         )
 
         # The autopilot will request each item by seq; we respond in turn.
         deadline = time.time() + max(10.0, 0.5 * len(items))
-        sent = 0
-        while sent < len(items) and time.time() < deadline:
-            req = self._mav.recv_match(
-                type=["MISSION_REQUEST", "MISSION_REQUEST_INT"],
-                blocking=True,
-                timeout=2.0,
-            )
-            if req is None:
+        sent: set[int] = set()
+        while len(sent) < len(items) and time.time() < deadline:
+            try:
+                req = self._mission_requests.get(timeout=1.0)
+            except queue.Empty:
+                continue
+            if req.seq >= len(items):
                 continue
             i = items[req.seq]
             self._mav.mav.mission_item_int_send(
@@ -395,11 +408,17 @@ class Vehicle:
                 float(i["z"]),
                 0,  # mission_type = MAV_MISSION_TYPE_MISSION
             )
-            sent += 1
+            sent.add(req.seq)
+
+        if len(sent) < len(items):
+            raise BridgeError(
+                f"Mission upload timed out: sent {len(sent)}/{len(items)} items"
+            )
 
         # Wait for MISSION_ACK
-        ack = self._mav.recv_match(type="MISSION_ACK", blocking=True, timeout=5.0)
-        if ack is None:
+        try:
+            ack = self._mission_acks.get(timeout=5.0)
+        except queue.Empty:
             raise BridgeError("No MISSION_ACK after upload")
         if ack.type != mavutil.mavlink.MAV_MISSION_ACCEPTED:
             raise BridgeError(f"Mission upload rejected: type={ack.type}")
@@ -496,6 +515,10 @@ class Vehicle:
             self._events.put(VehicleEvent("status", text))
         elif t == "MISSION_ITEM_REACHED":
             self._events.put(VehicleEvent("item_reached", msg.seq))
+        elif t in ("MISSION_REQUEST", "MISSION_REQUEST_INT"):
+            self._mission_requests.put(msg)
+        elif t == "MISSION_ACK":
+            self._mission_acks.put(msg)
         elif t == "COMMAND_ACK":
             self._acks.put(msg)
 
