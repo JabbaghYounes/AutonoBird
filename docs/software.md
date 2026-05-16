@@ -4,11 +4,14 @@ AutonoBird's software is organised as independent subsystems under `scripts/<nam
 
 ## Subsystems
 
-### Flight controller configuration
+### Flight controller — configuration + MAVLink bridge
 
-Not code — documentation and ArduPilot parameters for the Pixhawk 6C Mini. Port assignments, CRSF setup, OSD MAVLink configuration, pre-flight checklist. Future home for MAVLink bridge and companion-computer → Pixhawk command scripts (ROS2, MAVSDK).
+Two things live here: the documentation for the Pixhawk 6C Mini hardware build (port assignments, ArduPilot parameter set, pre-flight checklist) and the Pi-side MAVLink bridge that connects perception / autonomy code to the autopilot.
+
+The bridge (`bridge.py`) wraps pymavlink in a `Vehicle` class with a transport-agnostic API — the same code drives SITL via UDP from MAVProxy's forwarder (`udpin:127.0.0.1:14550`) and the real Pixhawk over USB-serial (`serial:///dev/ttyACM0`). Smoke-tested end-to-end against SITL: connect → GUIDED → arm → takeoff → RTL → auto-land → disarm.
 
 - Path: `scripts/flight-controller/`
+- Entry points: `bridge.py` (library), `test_bridge.py` (smoke test)
 - Docs: [`readme.md`](../scripts/flight-controller/readme.md)
 
 ### AR0144 stereo calibration
@@ -101,7 +104,7 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 | Stereo depth + YOLO fusion (handheld) | ✓ Live, 138 ms loop |
 | Voice assistant (Jarvis) | ✓ Standalone subsystem |
 | ArduPilot SITL bring-up (QUAV250 overlay) | ✓ First box mission flown |
-| MAVLink bridge between Pi and SITL / Pixhawk | Pending (pymavlink or MAVSDK; same code over TCP or USB-serial) |
+| Pi-side MAVLink bridge (`scripts/flight-controller/bridge.py`) | ✓ Live; smoke-tested against SITL |
 | Path planner (A*/RRT*) consuming depth + detections | Pending |
 | Perception → bridge → SITL closed loop | Pending — autonomy validation track |
 | First physical hover with imaging stack mounted | Deferred behind dissertation submission |

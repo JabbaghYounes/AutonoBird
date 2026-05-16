@@ -34,7 +34,7 @@ Each subsystem lives under `scripts/<name>/` with its own setup script, systemd 
 
 | Subsystem | Path | Purpose | Status |
 |---|---|---|---|
-| Flight controller | `scripts/flight-controller/` | Pixhawk 6C Mini configuration, port assignments, build notes | Stage 2 closed; MAVLink bridge pending |
+| Flight controller + bridge | `scripts/flight-controller/` | Pixhawk 6C Mini configuration + port assignments + Pi-side MAVLink bridge (`bridge.py`) | Stage 2 closed; bridge live (UDP→SITL + serial→Pixhawk) |
 | Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
 | Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`) | Running end-to-end at 6.8 fps |
 | ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi) | First mission flown (50 m box, all 6 items reached) |

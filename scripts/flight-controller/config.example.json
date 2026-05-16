@@ -1,0 +1,12 @@
+{
+  "connection_uri": "tcp:127.0.0.1:5760",
+  "source_system": 255,
+  "heartbeat_timeout": 30.0,
+  "default_takeoff_alt_m": 10.0,
+  "_comment": {
+    "connection_uri": "Transport endpoint. Examples: 'tcp:127.0.0.1:5760' (local SITL), 'tcp:192.168.1.50:5760' (SITL on a remote host), 'serial:///dev/ttyACM0:115200' (real Pixhawk over USB), 'udpin:0.0.0.0:14550' (SITL --out forwarder).",
+    "source_system": "MAVLink source-system ID for this client. 255 = GCS-class, matches MAVProxy's default. The autopilot is sysid 1.",
+    "heartbeat_timeout": "Seconds to wait for first heartbeat on connect.",
+    "default_takeoff_alt_m": "Default altitude for Vehicle.takeoff() if no argument given."
+  }
+}

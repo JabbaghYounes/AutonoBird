@@ -1,8 +1,88 @@
 # Flight Controller
 
-Covers the Pixhawk 6C Mini installation on the QAV250 airframe: port assignments, wiring decisions, component placement, weight breakdown, ArduPilot parameters, and the pre-flight checklist.
+Covers the Pixhawk 6C Mini installation on the QAV250 airframe: port assignments, wiring decisions, component placement, weight breakdown, ArduPilot parameters, the pre-flight checklist, **and the Pi-side MAVLink bridge that connects perception / autonomy code to either SITL or the real Pixhawk**.
 
-There is no code in this subsystem yet. Future MAVLink bridge / companion-computer scripts (ROS2, MAVSDK, obstacle-avoidance → Pixhawk command loop) will live here.
+## Pi-side MAVLink bridge
+
+The bridge (`bridge.py`) is the keystone between the Pi-side perception stack and the autopilot. It wraps pymavlink in a `Vehicle` class with a clean, transport-agnostic API; the same code targets SITL during development and the real Pixhawk during flight (only the connection URI changes).
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `setup.sh` | Creates `venv/` with pymavlink. One-time. |
+| `bridge.py` | `Vehicle` class. Background reader thread, 1 Hz GCS heartbeat, command API. |
+| `test_bridge.py` | End-to-end smoke test against SITL. |
+| `config.example.json` / `config.json` | Connection URI + defaults. `config.json` is gitignored. |
+
+### One-time install
+
+```bash
+cd scripts/flight-controller
+bash setup.sh
+```
+
+Creates `venv/` and verifies `pymavlink` imports cleanly.
+
+### Smoke test against SITL
+
+1. Start SITL the usual way: `scripts/sitl/run_sitl.sh` (uses `sim_vehicle.py` + MAVProxy; MAVProxy forwards MAVLink to `udp:127.0.0.1:14550`).
+2. In another terminal, run the smoke test:
+
+```bash
+./venv/bin/python test_bridge.py
+```
+
+The test connects to UDP 14550, waits for GPS fix, sets GUIDED, arms, takes off to 10 m, hovers 3 s, switches to RTL, watches the auto-land and disarm, then prints `PASS:` on success.
+
+### API surface (`Vehicle`)
+
+```python
+from bridge import Vehicle, load_config
+
+cfg = load_config()
+with Vehicle(cfg["connection_uri"]) as v:
+    s = v.state                  # snapshot: armed/mode/lat/lon/alt_rel/...
+    v.set_mode("GUIDED")
+    v.arm()
+    v.takeoff(10.0)
+    v.send_velocity_ned(2.0, 0, 0)   # +N at 2 m/s
+    v.rtl()
+    for evt in v.events(timeout=1.0):  # mode/arm/status/item_reached
+        ...
+```
+
+| Method | Blocking? | Notes |
+|---|---|---|
+| `connect()` / `__enter__` | Yes | waits for first autopilot heartbeat |
+| `disconnect()` / `__exit__` | Yes | clean tear-down of reader + heartbeat threads |
+| `state` (property) | No | thread-safe snapshot |
+| `events(timeout)` / `drain_events()` | both | mode / arm / status / mission events |
+| `set_mode(mode, timeout)` | Yes | mode name (case-insensitive) |
+| `arm(force, timeout)` / `disarm(force, timeout)` | Yes | |
+| `takeoff(alt_m, timeout)` | Yes | requires GUIDED + armed |
+| `rtl()` / `land()` | brief | mode change only, doesn't wait for landing |
+| `send_velocity_ned(vx, vy, vz, yaw_rate)` | No | offboard velocity setpoint for path planners |
+| `upload_mission(items)` | Yes | classic mission-protocol upload |
+
+### Transports
+
+The connection URI in `config.json` selects the transport:
+
+| URI | Use case |
+|---|---|
+| `udpin:127.0.0.1:14550` | **Default for SITL via MAVProxy.** MAVProxy stays the long-lived TCP client of `sim_vehicle.py`; the bridge talks to MAVProxy's UDP forwarder. |
+| `tcp:127.0.0.1:5760` | Direct connection to a bare SITL (no MAVProxy). The bridge's heartbeat thread keeps the link alive — without that, SITL exits after one client disconnect. |
+| `serial:///dev/ttyACM0:115200` | Real Pixhawk over USB. The deployment-target URI. |
+| `udp:192.168.x.y:14550` | Remote SITL or Pixhawk-via-companion forwarder. |
+
+### Gotchas
+
+- **MAVProxy and the bridge can coexist.** The bridge listens on UDP 14550 (where MAVProxy forwards), so MAVProxy keeps doing its console + map duties while the bridge issues commands. This is the easiest dev loop.
+- **Heartbeat-source filtering matches the dissertation §6.3 finding.** The bridge filters incoming HEARTBEATs to the autopilot's sysid (the one we first met); MAVProxy's GCS-sentinel heartbeats and our own heartbeats are ignored when updating vehicle state.
+- **Commands are synchronous and single-threaded.** Each `set_mode` / `arm` / etc. blocks until the ACK arrives or timeout. Issuing commands concurrently from multiple threads on the same `Vehicle` instance is not supported — queue them serially.
+- **`send_velocity_ned()` must be repeated at ~10 Hz** if you want continuous offboard control. ArduCopter falls back to "no offboard target" if the stream pauses.
+- **No automatic reconnection.** If the link drops, `Vehicle.events()` and `state` will stop updating but no exception is raised. Higher-level code should watch the state freshness and tear down + reconnect when needed.
 
 ## Airframe
 
