@@ -43,12 +43,13 @@ to compute an avoidance vector — the rest is reserved for future use
 
 from __future__ import annotations
 
+import json
+import os
 import queue
 import threading
 import time
-from collections import deque
 from dataclasses import dataclass, field
-from typing import Iterable, Iterator, Optional, Sequence, Union
+from typing import Iterator, Optional, Sequence
 
 try:
     # numpy is optional for callers that only use detection lists.
@@ -308,34 +309,125 @@ class SyntheticPerceptionSource(PerceptionSource):
 
 
 class DepthDetectSource(PerceptionSource):
-    """Tap on `scripts/perception/depth_detect.py` output.
+    """Tail `scripts/perception/depth_detect.py`'s JSONL output.
 
-    Status: **stub**. depth_detect.py currently prints detections to stdout
-    and overlays them on a cv2 window; nothing structured leaves the
-    process. To make this a real source we need depth_detect.py to also
-    emit one JSON object per detection-frame to a file or socket, with
-    the same shape as `PerceptionFrame`. Tracked in the engineering
-    backlog under perception extensions ("Detection event persistence").
+    depth_detect.py (run with ``--jsonl PATH``) writes one JSON record per
+    processed frame to PATH. This source opens that file and yields
+    PerceptionFrames as new lines appear.
 
-    Until that lands, this stub returns empty frames at `rate_hz` so
-    downstream code (planner, orchestrator) can be wired and tested
-    against `SyntheticPerceptionSource`; swapping in the real source
-    later is a single-line change in the orchestrator's config.
+    Two operating modes:
+
+    - **Replay** (``tail_from_end=False``, the default): read from the
+      start of the file. Useful for replaying a recorded handheld
+      perception session into the planner against SITL.
+    - **Live tail** (``tail_from_end=True``): seek to EOF and only emit
+      frames written after this source started. Useful when running
+      depth_detect.py concurrently — gives the planner only fresh
+      detections rather than racing through a backlog.
+
+    The source is robust to the file not yet existing on start (waits
+    up to ``startup_timeout_s`` for it) and to malformed lines (skips
+    them). Detections with ``depth_m=null`` (the perception side
+    couldn't resolve depth for that bbox) are dropped — the planner
+    only sees usable distances.
     """
 
-    def __init__(self, jsonl_path: Optional[str] = None, rate_hz: float = 10.0) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        jsonl_path: str,
+        tail_from_end: bool = False,
+        startup_timeout_s: float = 10.0,
+        poll_interval_s: float = 0.05,
+        queue_size: int = 16,
+    ) -> None:
+        super().__init__(queue_size=queue_size)
         self._jsonl_path = jsonl_path
-        self._period = 1.0 / rate_hz
+        self._tail_from_end = bool(tail_from_end)
+        self._startup_timeout_s = float(startup_timeout_s)
+        self._poll_interval_s = float(poll_interval_s)
+
+    def _wait_for_file(self) -> bool:
+        """Block until the JSONL file exists, or stop / timeout."""
+        deadline = time.time() + self._startup_timeout_s
+        while not self._stop_flag.is_set():
+            if os.path.exists(self._jsonl_path):
+                return True
+            if time.time() > deadline:
+                return False
+            self._stop_flag.wait(0.1)
+        return False
+
+    def _parse_line(self, line: str) -> Optional[PerceptionFrame]:
+        """Parse one JSONL record into a PerceptionFrame. None on bad input."""
+        line = line.strip()
+        if not line:
+            return None
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            return None
+
+        detections_raw = obj.get("detections") or []
+        detections: list[Detection] = []
+        for d in detections_raw:
+            depth = d.get("depth_m")
+            if depth is None:
+                # Perception couldn't resolve depth (out-of-band, hole in
+                # disparity map). Skip — planner needs a number.
+                continue
+            try:
+                detections.append(
+                    Detection(
+                        class_name=str(d["class_name"]),
+                        confidence=float(d["confidence"]),
+                        bbox_xyxy=tuple(int(v) for v in d["bbox_xyxy"]),  # type: ignore[arg-type]
+                        depth_m=float(depth),
+                        bbox_centroid_norm=tuple(
+                            float(v) for v in d["bbox_centroid_norm"]
+                        ),  # type: ignore[arg-type]
+                    )
+                )
+            except (KeyError, TypeError, ValueError):
+                # Skip malformed detection objects but keep the frame.
+                continue
+
+        return PerceptionFrame(
+            t=float(obj.get("t", time.time())),
+            detections=detections,
+            camera_hfov_deg=float(obj.get("camera_hfov_deg", 67.0)),
+            camera_vfov_deg=float(obj.get("camera_vfov_deg", 41.0)),
+        )
 
     def _run(self) -> None:
-        # TODO: tail self._jsonl_path, parse JSON lines into PerceptionFrame.
-        # For the stub, just emit empty frames at the configured rate so
-        # the planner sees "no obstacles" but the source contract is
-        # exercised.
-        while not self._stop_flag.is_set():
-            self._publish(PerceptionFrame(t=time.time(), detections=[]))
-            self._stop_flag.wait(self._period)
+        if not self._wait_for_file():
+            # File never appeared. Stay alive and emit empty frames so
+            # the planner doesn't crash on missing perception — same
+            # contract as the old stub.
+            while not self._stop_flag.is_set():
+                self._publish(PerceptionFrame(t=time.time()))
+                self._stop_flag.wait(0.5)
+            return
+
+        try:
+            f = open(self._jsonl_path, "r", encoding="utf-8")
+        except OSError:
+            return
+
+        try:
+            if self._tail_from_end:
+                f.seek(0, os.SEEK_END)
+
+            while not self._stop_flag.is_set():
+                line = f.readline()
+                if not line:
+                    # EOF — wait for more lines to be appended.
+                    self._stop_flag.wait(self._poll_interval_s)
+                    continue
+                frame = self._parse_line(line)
+                if frame is not None:
+                    self._publish(frame)
+        finally:
+            f.close()
 
 
 # ---------------------------------------------------------------------- #
@@ -360,5 +452,103 @@ def _self_test() -> None:
             time.sleep(0.25)
 
 
+def _jsonl_roundtrip_test() -> None:
+    """Smoke-test DepthDetectSource by writing a small JSONL file and
+    reading it back through the source. No SITL or perception process
+    needed — just verifies the parser + queueing.
+    """
+    import tempfile
+
+    records = [
+        # Frame 1: no detections
+        {"t": 1.0, "detections": [], "camera_hfov_deg": 67.0, "camera_vfov_deg": 41.0},
+        # Frame 2: one valid detection
+        {
+            "t": 1.1,
+            "detections": [
+                {
+                    "class_name": "person",
+                    "confidence": 0.87,
+                    "bbox_xyxy": [560, 280, 720, 440],
+                    "depth_m": 0.85,
+                    "bbox_centroid_norm": [0.0, 0.0],
+                },
+            ],
+        },
+        # Frame 3: one valid + one with null depth (should be dropped)
+        {
+            "t": 1.2,
+            "detections": [
+                {
+                    "class_name": "laptop",
+                    "confidence": 0.42,
+                    "bbox_xyxy": [400, 300, 500, 400],
+                    "depth_m": 0.67,
+                    "bbox_centroid_norm": [-0.3, 0.1],
+                },
+                {
+                    "class_name": "chair",
+                    "confidence": 0.55,
+                    "bbox_xyxy": [100, 100, 200, 200],
+                    "depth_m": None,
+                    "bbox_centroid_norm": [-0.7, -0.3],
+                },
+            ],
+        },
+        # Frame 4: malformed line — should be silently skipped (we test
+        # by writing it as a raw broken line below, not in this list).
+    ]
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".jsonl", delete=False, encoding="utf-8"
+    ) as f:
+        for r in records:
+            f.write(json.dumps(r) + "\n")
+        f.write("this is not json\n")        # malformed line
+        f.write("\n")                          # blank line
+        path = f.name
+
+    print(f"Test JSONL at {path}")
+    src = DepthDetectSource(jsonl_path=path, tail_from_end=False)
+    src.start()
+
+    # Give the tailer a moment to read the whole file.
+    time.sleep(0.5)
+    src.stop()
+
+    # Drain all frames (newest first via latest(), so use frames())
+    frames: list[PerceptionFrame] = []
+    while True:
+        try:
+            frames.append(src._q.get_nowait())  # type: ignore[attr-defined]
+        except queue.Empty:
+            break
+
+    print(f"Got {len(frames)} frames (expected 3 — one malformed + one blank dropped):")
+    for fr in frames:
+        msg = (
+            f"  t={fr.t:.2f} detections={len(fr.detections)}: "
+            + ", ".join(f"{d.class_name}@{d.depth_m:.2f}m" for d in fr.detections)
+        )
+        print(msg)
+    assert len(frames) == 3, f"expected 3 frames, got {len(frames)}"
+    # Frame 0: no detections
+    assert frames[0].detections == []
+    # Frame 1: one detection, depth 0.85
+    assert len(frames[1].detections) == 1
+    assert frames[1].detections[0].class_name == "person"
+    assert frames[1].detections[0].depth_m == 0.85
+    # Frame 2: chair (null depth) dropped, laptop kept
+    assert len(frames[2].detections) == 1
+    assert frames[2].detections[0].class_name == "laptop"
+    print("PASS: JSONL round-trip parses correctly.")
+
+    os.unlink(path)
+
+
 if __name__ == "__main__":
-    _self_test()
+    import sys
+    if "--jsonl" in sys.argv:
+        _jsonl_roundtrip_test()
+    else:
+        _self_test()

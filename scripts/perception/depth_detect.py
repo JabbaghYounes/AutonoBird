@@ -35,6 +35,7 @@ quality during handheld bring-up.
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -179,6 +180,15 @@ def main():
                         help=f"YOLO confidence threshold (default: {DEFAULT_CONFIDENCE})")
     parser.add_argument("--show-depth", action="store_true",
                         help="Open a second window with the colourised disparity map")
+    parser.add_argument("--jsonl", default=None,
+                        help="If set, append one JSON object per processed frame "
+                             "to this file. Format matches scripts/autonomy/"
+                             "perception_source.PerceptionFrame so the autonomy "
+                             "DepthDetectSource can tail it. One detection-set "
+                             "per line, line-buffered for live tail.")
+    parser.add_argument("--no-gui", action="store_true",
+                        help="Skip cv2 window setup. Useful for headless runs "
+                             "that only need JSONL emit (e.g. over SSH).")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -195,13 +205,29 @@ def main():
     cap = open_camera(args.source)
     matcher = make_stereo_matcher()
 
-    WINDOW_NAME = "Handheld Perception (Stereo Depth + YOLO) - Q to quit"
-    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WINDOW_NAME, 1280, 720)
-    if args.show_depth:
-        DEPTH_WIN = "Disparity (colourised)"
-        cv2.namedWindow(DEPTH_WIN, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(DEPTH_WIN, 640, 360)
+    # Optional JSONL emit. One JSON object per processed frame, matching
+    # scripts/autonomy/perception_source.PerceptionFrame's shape:
+    #   {"t": <unix s>, "detections": [{...}], "camera_hfov_deg": 67.0, ...}
+    # buffering=1 = line-buffered so the autonomy-side tail sees each line
+    # as soon as it's written.
+    jsonl_file = None
+    if args.jsonl:
+        # Append-mode: multiple sessions can target the same file without
+        # clobbering earlier runs; the consumer can tail from EOF.
+        jsonl_file = open(args.jsonl, "a", buffering=1)
+        print(f"[INFO] Emitting JSONL detection events to {args.jsonl}")
+
+    if not args.no_gui:
+        WINDOW_NAME = "Handheld Perception (Stereo Depth + YOLO) - Q to quit"
+        cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(WINDOW_NAME, 1280, 720)
+        if args.show_depth:
+            DEPTH_WIN = "Disparity (colourised)"
+            cv2.namedWindow(DEPTH_WIN, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(DEPTH_WIN, 640, 360)
+    else:
+        WINDOW_NAME = None
+        DEPTH_WIN = None
 
     # Q-matrix derived focal length in rectified pixels. Q[2, 3] = -f
     # (sign depends on convention; abs() is safe). At our half-res depth
@@ -219,7 +245,7 @@ def main():
     consecutive_bad_reads = 0
     MAX_BAD_READS = 60
 
-    print("Press Q to quit.\n")
+    print("Press Q to quit (GUI mode) or Ctrl+C (any mode).\n")
 
     while True:
         loop_t0 = time.perf_counter()
@@ -273,6 +299,11 @@ def main():
 
         detections = decode_detections(raw_out, args.threshold)
 
+        # Build the per-frame record while we annotate: collect each
+        # detection's class / score / unmapped bbox / depth / centroid for
+        # both visualisation and JSONL emit. This avoids a second pass.
+        annotated: list[dict] = []
+
         # Annotate
         display = rectL.copy()
         for det in detections:
@@ -287,6 +318,19 @@ def main():
             depth_str = f"{depth_m:.2f}m" if not np.isnan(depth_m) else "?m"
             color = color_for_class(class_id)
 
+            # Normalised centroid in [-1, 1] from the frame centre, matches
+            # PerceptionSource.Detection.bbox_centroid_norm.
+            cx_norm = (cx - orig_w / 2.0) / (orig_w / 2.0)
+            cy_norm = (cy - orig_h / 2.0) / (orig_h / 2.0)
+
+            annotated.append({
+                "class_name": label,
+                "confidence": float(det["score"]),
+                "bbox_xyxy": [int(x1), int(y1), int(x2), int(y2)],
+                "depth_m": None if np.isnan(depth_m) else float(depth_m),
+                "bbox_centroid_norm": [float(cx_norm), float(cy_norm)],
+            })
+
             cv2.rectangle(display, (x1, y1), (x2, y2), color, 2)
             cv2.circle(display, (cx, cy), 4, color, -1)
             text = f"{label} {det['score']:.2f} @ {depth_str}"
@@ -295,6 +339,25 @@ def main():
                           color, -1)
             cv2.putText(display, text, (x1 + 2, y1 - 4),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+
+        # JSONL emit (one line per processed frame). Always emit, even
+        # when no detections fired — the autonomy consumer relies on a
+        # stream of frames at the perception rate to know perception is
+        # alive, not just on detection events.
+        if jsonl_file is not None:
+            frame_record = {
+                "t": time.time(),
+                "detections": annotated,
+                # AR0144 measured HFOV after cal-4 (dissertation § 6.1). 4:3
+                # crop -> VFOV ≈ HFOV * 3/4. Constants for now; could be
+                # derived from the calibration .npz in a future revision.
+                "camera_hfov_deg": 67.0,
+                "camera_vfov_deg": 41.0,
+            }
+            try:
+                jsonl_file.write(json.dumps(frame_record) + "\n")
+            except Exception as e:
+                print(f"[WARN] JSONL write failed: {e}", file=sys.stderr)
 
         # Loop timing
         total_ms = (time.perf_counter() - loop_t0) * 1000.0
@@ -308,23 +371,24 @@ def main():
             fps_t0 = now
             fps_count = 0
 
-        # Header overlay
-        strip_h = 28
-        cv2.rectangle(display, (0, 0), (orig_w, strip_h), (0, 0, 0), -1)
-        cv2.putText(display,
-                    f"FPS: {fps_display:4.1f}  NPU: {npu_ms_ema:5.1f}ms  "
-                    f"SGBM: {sgbm_ms_ema:5.1f}ms  loop: {total_ms_ema:5.1f}ms  "
-                    f"det: {len(detections):2d}",
-                    (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        if not args.no_gui:
+            # Header overlay
+            strip_h = 28
+            cv2.rectangle(display, (0, 0), (orig_w, strip_h), (0, 0, 0), -1)
+            cv2.putText(display,
+                        f"FPS: {fps_display:4.1f}  NPU: {npu_ms_ema:5.1f}ms  "
+                        f"SGBM: {sgbm_ms_ema:5.1f}ms  loop: {total_ms_ema:5.1f}ms  "
+                        f"det: {len(detections):2d}",
+                        (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
-        cv2.imshow(WINDOW_NAME, display)
+            cv2.imshow(WINDOW_NAME, display)
 
-        if args.show_depth:
-            # Visualise disparity (not depth — disparity colour-maps more
-            # cleanly across distance bands)
-            disp_vis = cv2.normalize(disparity, None, 0, 255, cv2.NORM_MINMAX)
-            disp_vis = cv2.applyColorMap(np.uint8(disp_vis), cv2.COLORMAP_JET)
-            cv2.imshow(DEPTH_WIN, disp_vis)
+            if args.show_depth:
+                # Visualise disparity (not depth — disparity colour-maps more
+                # cleanly across distance bands)
+                disp_vis = cv2.normalize(disparity, None, 0, 255, cv2.NORM_MINMAX)
+                disp_vis = cv2.applyColorMap(np.uint8(disp_vis), cv2.COLORMAP_JET)
+                cv2.imshow(DEPTH_WIN, disp_vis)
 
         # Heartbeat
         if now - last_heartbeat >= 3.0:
@@ -333,11 +397,18 @@ def main():
                   f"det={len(detections)}")
             last_heartbeat = now
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        if not args.no_gui:
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 
     cap.release()
-    cv2.destroyAllWindows()
+    if not args.no_gui:
+        cv2.destroyAllWindows()
+    if jsonl_file is not None:
+        try:
+            jsonl_file.close()
+        except Exception:
+            pass
     print(f"\nDone. Final EMA — NPU: {npu_ms_ema:.1f} ms, "
           f"SGBM: {sgbm_ms_ema:.1f} ms, loop: {total_ms_ema:.1f} ms.")
 

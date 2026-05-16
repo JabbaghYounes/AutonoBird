@@ -86,7 +86,7 @@ These would lift the §6.4 "not measured" outcomes without leaving the simulator
 |---|---|---|---|
 | `[ ]` | **YOLO custom-class enrollment** | 🟡 | Two paths: (a) fine-tune YOLOv8n on a small custom dataset, recompile to HEF; (b) embedding-based open-set detection via OSNet/CLIP + FAISS. (b) is the §6.6 "person recognition deployment" item. |
 | `[ ]` | **Vector database for face / object embeddings** | 🟡 | FAISS or Qdrant. Stores ArcFace + OSNet embeddings for retrieval. Pi 5 RAM-friendly. |
-| `[ ]` | **Detection event persistence** (replace stdout with structured logs) | 🟡 | SQLite append or JSONL rolling file. Class + confidence + depth + bbox + timestamp. |
+| `[x]` | **Detection event persistence** (replace stdout with structured logs) | 🟡 | ✅ 2026-05-16. `scripts/perception/depth_detect.py --jsonl PATH` (also `--no-gui` for headless runs) appends one JSON record per processed frame, line-buffered. Schema matches `scripts/autonomy/perception_source.PerceptionFrame`. The autonomy-side `DepthDetectSource` (now real, no longer a stub) tails this file — supports both replay (`tail_from_end=False`) and live tail. Round-trip tested. Real-perception → SITL closed-loop is now a config change in the planner. |
 | `[ ]` | **Apply perception backlog optimisation #2 (ROI-only SGBM)** | 🟢 | Auto-memory `project_perception_optimizations_backlog.md` #2. Only triggers if current 138 ms loop becomes insufficient. |
 | `[ ]` | **Apply optimisation #3 (YOLO-conditional depth)** | 🟢 | Same memory file. Couples perception stages instead of running both blindly. |
 
