@@ -152,6 +152,13 @@ class Planner:
         # Latched on entry to AVOIDING to prevent left-right oscillation
         # when an obstacle's centroid hovers near 0.
         self._avoidance_sign: int = +1
+        # Cache the most-recent perception frame so the planner doesn't
+        # flap when the perception rate (~6.8 Hz from depth_detect.py) is
+        # lower than the planner rate (10 Hz). Treat the cached frame as
+        # authoritative until it gets older than `_perception_stale_s`.
+        self._cached_frame = None
+        self._cached_frame_seen_t: float = 0.0
+        self._perception_stale_s: float = 1.0
 
         self._subscribers: list[ModeChangeCallback] = []
 
@@ -253,7 +260,25 @@ class Planner:
             self._stop_flag.wait(self._period)
 
     def _tick(self) -> None:
-        frame = self.perception.latest()
+        # Read perception. If a fresh frame is available, cache it. If
+        # nothing's available, fall back to the most-recent cached frame
+        # provided it's still inside the staleness window. This avoids
+        # the planner-rate vs perception-rate flap we saw with depth_detect
+        # at 6.8 Hz feeding a 10 Hz planner.
+        fresh = self.perception.latest()
+        now = time.time()
+        if fresh is not None:
+            self._cached_frame = fresh
+            self._cached_frame_seen_t = now
+            frame: Optional[PerceptionFrame] = fresh
+        elif self._cached_frame is not None and (now - self._cached_frame_seen_t) <= self._perception_stale_s:
+            frame = self._cached_frame
+        else:
+            # Either no frame has ever arrived, or the last one is too
+            # old to trust. Safe default: treat as no obstacle (planner
+            # will return to CRUISING).
+            frame = None
+
         obstacle = self._select_obstacle(frame)
 
         # Update mode based on obstacle presence (hysteresis).

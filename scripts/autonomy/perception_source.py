@@ -338,13 +338,27 @@ class DepthDetectSource(PerceptionSource):
         tail_from_end: bool = False,
         startup_timeout_s: float = 10.0,
         poll_interval_s: float = 0.05,
+        replay_speed: float = 0.0,
         queue_size: int = 16,
     ) -> None:
+        """
+        replay_speed: pacing for replay mode (tail_from_end=False).
+          * 0.0   -> as-fast-as-possible (the queue absorbs the burst;
+                    only the latest() frame matters to the planner).
+                    Use for unit tests that don't care about timing.
+          * 1.0   -> real-time (use the `t` field in the JSONL to pace
+                    emissions). Use for closed-loop SITL tests that need
+                    the obstacle timeline to match the recorded session.
+          * 2.0   -> 2x faster than real-time, etc.
+          Ignored in live-tail mode (tail_from_end=True), where the
+          producer's append rate already paces things.
+        """
         super().__init__(queue_size=queue_size)
         self._jsonl_path = jsonl_path
         self._tail_from_end = bool(tail_from_end)
         self._startup_timeout_s = float(startup_timeout_s)
         self._poll_interval_s = float(poll_interval_s)
+        self._replay_speed = float(replay_speed)
 
     def _wait_for_file(self) -> bool:
         """Block until the JSONL file exists, or stop / timeout."""
@@ -417,6 +431,15 @@ class DepthDetectSource(PerceptionSource):
             if self._tail_from_end:
                 f.seek(0, os.SEEK_END)
 
+            # For real-time replay pacing: time origin is set on the
+            # first parsed frame and used to delay subsequent emissions
+            # so they match the recorded timestamps.
+            replay_active = (
+                not self._tail_from_end and self._replay_speed > 0.0
+            )
+            real_t0: Optional[float] = None
+            frame_t0: Optional[float] = None
+
             while not self._stop_flag.is_set():
                 line = f.readline()
                 if not line:
@@ -424,8 +447,24 @@ class DepthDetectSource(PerceptionSource):
                     self._stop_flag.wait(self._poll_interval_s)
                     continue
                 frame = self._parse_line(line)
-                if frame is not None:
-                    self._publish(frame)
+                if frame is None:
+                    continue
+
+                if replay_active:
+                    if real_t0 is None:
+                        real_t0 = time.time()
+                        frame_t0 = frame.t
+                    # Sleep until the frame's recorded time has elapsed
+                    # in real time (scaled by replay_speed).
+                    assert frame_t0 is not None
+                    target = real_t0 + (frame.t - frame_t0) / self._replay_speed
+                    delay = target - time.time()
+                    if delay > 0:
+                        # Wake on stop_flag to keep teardown responsive.
+                        if self._stop_flag.wait(delay):
+                            break
+
+                self._publish(frame)
         finally:
             f.close()
 
