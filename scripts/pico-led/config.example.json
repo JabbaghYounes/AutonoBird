@@ -1,0 +1,10 @@
+{
+  "port": "/dev/ttyACM0",
+  "baud": 115200,
+  "brightness": 48,
+  "_comment": {
+    "port": "USB-serial device path. Pi 5 typically enumerates the Pico as /dev/ttyACM0. If you have multiple ACM devices (e.g. Pixhawk also on ttyACM0), check `ls /dev/serial/by-id/` for a stable symlink and use that.",
+    "baud": "USB CDC ignores baud rate but pyserial requires a value. 115200 is the MicroPython convention.",
+    "brightness": "Default brightness scale 0..255 applied on connect. 48 is comfortable indoor; bump higher for daylight."
+  }
+}
