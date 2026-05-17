@@ -19,6 +19,8 @@ AutonoBird is a university dissertation project in Applied Computer Science. The
 - **T6 multi-run mission replication (SITL)**: 10 sequential box_50m runs, 100 % pass rate at ±5 % extent tolerance, mean extents 51.12 ± 0.07 m N / 51.17 ± 0.06 m E / 10.02 ± 0.00 m alt
 - **Wind / disturbance rejection (SITL)**: `SIM_WIND_SPD ∈ {0, 5, 10, 15}` m/s sweep, 8/8 T6 missions + 4/4 T4 hovers pass — hover h-drift stays under 50 mm at 0–10 m/s, kicks to 118 mm at 15 m/s (still 4× under bound)
 - **T5 closed-loop avoidance against Gazebo-physics-grounded obstacle**: full Gazebo Harmonic integration — custom `iris_with_lidar` model + `iris_obstacle.sdf` world with a 12 m tall cylinder, simulated forward-facing lidar feeds the autonomy stack via a `gz topic` → JSONL bridge. Min clearance 1.92 m from the cylinder surface (6.4× over the 0.3 m T5 bound), planner cycles CRUISING → AVOIDING → CRUISING, bird passes obstacle to 17 m N with 3.45 m east sidestep, RTL + disarm clean
+- **Orchestrator**: `scripts/autonomy/orchestrator.py` — single-process bring-up of Vehicle bridge + FSM + optional Planner + optional Gesture pipeline + optional Pico LED bridge. Defaults to monitor mode (no commands sent — safe everywhere). Exposes `command_hold / command_resume / command_land / command_rtl` as the single intent surface that gesture (and future voice / gamepad) modalities bind into. Periodic 1 Hz STATUS line + FSM/planner transition logs. SITL smoke-tested
+- **Gesture pipeline (replaces voice as primary in-flight modality)**: body-pose recognition of STOP / LAND / COME / RECEDE from COCO-17 keypoints. `scripts/autonomy/{gesture_classifier,gesture_action_map}.py` with confidence gating + temporal smoothing + cooldown. Perception side: `scripts/perception/depth_detect.py --pose` loads YOLOv8n-pose on the Hailo-8 NPU and emits keypoints in the JSONL. Code complete both sides; live Hailo validation pending (side-tabled until post-submission). Voice (FR6 Met via Jarvis) stays useful for bench / pre-flight commands but is demoted from the in-flight command path — motor noise + acoustic SNR make on-board voice recognition unworkable airborne
 - **Remaining**: physical mount of imaging stack on the airframe + first hover (Stage 4 hardware flight)
 
 ## Documentation
@@ -32,7 +34,8 @@ Top-level docs live in `docs/`:
 Subsystem-specific documentation lives alongside the code under `scripts/<subsystem>/`:
 
 - [`scripts/flight-controller/readme.md`](scripts/flight-controller/readme.md) — Pixhawk port map, ArduPilot parameters, build log, pre-flight checklist, **Pi-side MAVLink bridge**
-- [`scripts/autonomy/readme.md`](scripts/autonomy/readme.md) — flight-state machine, reactive avoider, perception sources, closed-loop SITL tests
+- [`scripts/autonomy/readme.md`](scripts/autonomy/readme.md) — flight-state machine, reactive avoider, perception sources, closed-loop SITL tests, **orchestrator**, **gesture pipeline + voice-vs-gesture rationale**
+- [`scripts/pico-led/readme.md`](scripts/pico-led/readme.md) — Pico LED bridge (code complete, hardware blocked — Pico unit needs replacement)
 - [`scripts/ar0144/steps.md`](scripts/ar0144/steps.md) — stereo camera calibration (40-pose guided)
 - [`scripts/perception/readme.md`](scripts/perception/readme.md) — YOLO detection + depth-fused perception on Hailo-8 (includes the `--jsonl` detection-event emitter that feeds the autonomy stack)
 - [`scripts/sitl/readme.md`](scripts/sitl/readme.md) — ArduPilot SITL setup, QUAV250 parameter overlay, scripted missions, **Gazebo Harmonic obstacle world + iris_with_lidar model** under `scripts/sitl/gazebo/`
