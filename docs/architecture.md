@@ -35,10 +35,10 @@ Each subsystem lives under `scripts/<name>/` with its own setup script, systemd 
 | Subsystem | Path | Purpose | Status |
 |---|---|---|---|
 | Flight controller + bridge | `scripts/flight-controller/` | Pixhawk 6C Mini configuration + port assignments + Pi-side MAVLink bridge (`bridge.py`) | Stage 2 closed; bridge live (UDP→SITL + serial→Pixhawk) |
-| Autonomy | `scripts/autonomy/` | Flight-state machine + reactive obstacle-avoidance planner + perception-input abstraction (synthetic + JSONL-tail) | Closed-loop SITL avoidance demonstrated against two perception transports |
+| Autonomy | `scripts/autonomy/` | Flight-state machine + reactive obstacle-avoidance planner + perception-input abstraction (synthetic + JSONL-tail + Gazebo lidar bridge) | Closed-loop SITL avoidance demonstrated against three perception transports (synthetic, JSONL replay, Gazebo physics-grounded); T4 hover + T6 multi-run + wind-sweep closed in SITL |
 | Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
 | Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`); JSONL detection-event emitter for the autonomy stack | Running end-to-end at 6.8 fps; JSONL pipe wired |
-| ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi) | Box mission flown; closed-loop avoidance with planner demonstrated |
+| ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi); Gazebo Harmonic integration under `gazebo/` (custom `iris_with_lidar` model + `iris_obstacle.sdf` world for T5) | Box mission flown, multi-run replication closed, wind sweep closed, T5 closed-loop against physics-grounded Gazebo obstacle passed (1.92 m clearance) |
 | Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative — superseded by AR0144 | Reference only |
 | Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline | Standalone subsystem |
 | Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) | Standalone subsystem |
@@ -56,7 +56,7 @@ The handheld perception loop runs end-to-end on the calibration / perception rig
 6. **Fusion**: each detection annotated with `<class> <score> @ <depth>m`.
 7. **End-to-end loop**: 138 ms / 6.8 fps. Under the 250 ms NFR1 target.
 
-Pending (not yet implemented): path planner (A* / RRT*) consuming the perception output, and Pi-side MAVLink bridge streaming offboard commands to either the Pixhawk (real flight) or the SITL (validation). ArduPilot SITL itself is now up — see [software.md](software.md) and `scripts/sitl/readme.md` — and a first scripted box mission has been flown autonomously, with 51.1 m × 51.1 m × 10.03 m measured against a 50 m × 50 m × 10 m target.
+The Pi-side MAVLink bridge (`scripts/flight-controller/bridge.py`) and reactive autonomy stack (`scripts/autonomy/`) are both live. The bridge connects to either SITL via UDP (development) or the real Pixhawk via USB-serial (deployment) — only the URI changes. The autonomy stack runs against three perception transports: in-process synthetic, JSONL replay of recorded `depth_detect.py` output, and a Gazebo Harmonic forward-facing lidar bridge for physics-grounded T5 evaluation. A global path planner (A* / RRT*) on top of the reactive avoider is recorded as future work (dissertation § 6.6).
 
 Success criteria for this loop are defined in the dissertation (§ 6.1 / § 6.2) and the [hardware](hardware.md) doc.
 

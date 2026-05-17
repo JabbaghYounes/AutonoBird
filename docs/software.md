@@ -39,16 +39,16 @@ Dedicated venv at `scripts/perception/venv` with version-pinned dependencies (`h
 - Entry points: `yolo_detect.py`, `depth_detect.py`
 - Docs: [`readme.md`](../scripts/perception/readme.md)
 
-### ArduPilot SITL (QUAV250 overlay)
+### ArduPilot SITL (QUAV250 overlay) + Gazebo Harmonic integration
 
 Software-in-the-loop simulation of the ArduCopter flight controller, running on the dev workstation (x86_64, not the Pi). Exposes MAVLink over TCP exactly like the real Pixhawk over USB-serial, so MAVProxy, QGroundControl, Mission Planner, or a Pi-side companion-computer bridge can connect identically. Authorised path for validating autonomy without a physical hover.
 
-ArduPilot itself lives out-of-tree at `~/Documents/ardupilot` — `scripts/sitl/` contains only the QUAV250 overlay (`quav250.parm`: frame, FLTMODE assignments, throttle failsafe, battery thrust scaling — hardware-specific params intentionally omitted), a launch wrapper (`run_sitl.sh`), and the mission catalogue (`missions/`).
+ArduPilot itself lives out-of-tree at `~/Documents/ardupilot` — `scripts/sitl/` contains the QUAV250 overlay (`quav250.parm`: frame, FLTMODE assignments, throttle failsafe, battery thrust scaling — hardware-specific params intentionally omitted), a launch wrapper (`run_sitl.sh`), the mission catalogue (`missions/`), and the Gazebo Harmonic integration files (`gazebo/worlds/iris_obstacle.sdf`, `gazebo/models/iris_with_lidar/`) used by the T5 closed-loop test.
 
-First scripted mission flown 2026-05-15: 50 m × 50 m box at 10 m AGL, all six mission items (NAV_TAKEOFF, 4 NAV_WAYPOINT, NAV_RTL) reached. `.tlog` analysis: 51.1 m × 51.1 m extent, 10.03 m peak altitude.
+First scripted mission flown 2026-05-15: 50 m × 50 m box at 10 m AGL, all six mission items (NAV_TAKEOFF, 4 NAV_WAYPOINT, NAV_RTL) reached. `.tlog` analysis: 51.1 m × 51.1 m extent, 10.03 m peak altitude. Multi-run replication (10 runs) and wind sweeps subsequently extended the same harness; physics-grounded T5 avoidance runs against Gazebo's `iris_obstacle.sdf` world via the `gazebo-iris` SITL frame (`sim_vehicle.py -v ArduCopter -f gazebo-iris --model JSON ...` — note the explicit `--add-param-file` is required because frame defaults aren't auto-applied for the JSON model; see `scripts/sitl/readme.md`).
 
-- Path: `scripts/sitl/`
-- Entry point: `run_sitl.sh` (wraps `sim_vehicle.py -v ArduCopter -f quad --add-param-file=quav250.parm --console --map`)
+- Path: `scripts/sitl/` (overlay + missions) + `scripts/sitl/gazebo/` (Gazebo Harmonic world + custom model)
+- Entry point: `run_sitl.sh` (QUAV250 box-mission), `gz sim -v4 -r iris_obstacle.sdf` (Gazebo T5)
 - Docs: [`readme.md`](../scripts/sitl/readme.md), [`missions/readme.md`](../scripts/sitl/missions/readme.md)
 
 ### Autonomy (state machine + planner + perception input)
@@ -63,10 +63,17 @@ Three modules:
 
 Cross-subsystem imports `Vehicle` from `../flight-controller` via `sys.path`. Own venv (pymavlink + numpy).
 
-Two closed-loop SITL tests demonstrate the full chain: `test_avoidance.py` (in-process synthetic perception) and `test_avoidance_jsonl.py` (JSONL replay). Both pass on identical criteria: drone takes off, cruises north, sidesteps east on obstacle injection, resumes cruise, RTL + land. Match within noise (+22 m N / +9.6 m E across both transports).
+Five closed-loop SITL tests demonstrate the full chain:
+
+- `test_avoidance.py` — in-process synthetic perception, scripted obstacle timeline
+- `test_avoidance_jsonl.py` — JSONL replay of pre-recorded `depth_detect.py` output
+- `test_avoidance_gazebo.py` — physics-grounded obstacle in Gazebo Harmonic with simulated forward-facing lidar feeding the autonomy stack via `gazebo_perception_bridge.py` (T5 dissertation evidence; min 1.92 m clearance from a collision-bodied cylinder)
+- `test_hover_stability.py` — T4 hover stability (38 mm max h-drift over 60 s @ 5 m)
+- `test_mission_replicate.py` — T6 multi-run replication (10 sequential box missions, 100 % pass at ±5 % extent tolerance)
+- `test_wind_sweep.py` — wind / disturbance rejection sweep at `SIM_WIND_SPD ∈ {0, 5, 10, 15}` m/s (8/8 missions + 4/4 hovers pass)
 
 - Path: `scripts/autonomy/`
-- Entry points: `test_avoidance.py`, `test_avoidance_jsonl.py`, `make_synthetic_jsonl.py`
+- Entry points: see test list above; data contract producers `make_synthetic_jsonl.py` (synthetic) and `gazebo_perception_bridge.py` (Gazebo lidar → JSONL)
 - Docs: [`readme.md`](../scripts/autonomy/readme.md)
 
 ### Arducam IMX519 stereo depth (legacy)
@@ -127,6 +134,10 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 | Reactive obstacle-avoidance planner (`scripts/autonomy/planner.py`) | ✓ Live; CRUISING/AVOIDING modes with hysteresis |
 | Perception → bridge → SITL closed loop | ✓ Demonstrated against synthetic + JSONL transports |
 | `depth_detect.py --jsonl` detection-event pipe | ✓ Live; autonomy `DepthDetectSource` consumes it |
+| T4 hover stability (SITL) | ✓ 38 mm max h-drift over 60 s @ 5 m hover (bound 500 mm) |
+| T6 multi-run mission replication (SITL) | ✓ 10/10 box_50m runs at ±5 % extent tolerance |
+| Wind / disturbance rejection sweep (SITL) | ✓ 0/5/10/15 m/s, 100 % pass on 8 missions + 4 hovers |
+| T5 closed-loop avoidance (Gazebo Harmonic, physics-grounded obstacle) | ✓ 1.92 m clearance from cylinder surface (bound 0.3 m, 6.4× headroom) |
 | Global path planner (A*/RRT*) on top of the reactive avoider | Pending — § 6.6 future work |
 | First physical hover with imaging stack mounted | Deferred behind dissertation submission |
 | ROS 2 / Meshtastic / ATAK | Future work (dissertation § 6.6) |
