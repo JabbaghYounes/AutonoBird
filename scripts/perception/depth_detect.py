@@ -70,6 +70,20 @@ DEFAULT_CALIB = os.path.normpath(
                  "stereo_calibration_data", "stereo_calibration.npz")
 )
 
+# Default HEF when --pose is set. The pose model is symlinked from
+# ~/Documents/Benchy/resources/hefs/v8_pose_n_hailo8.hef by the Pi-side
+# setup; the symlink lands at scripts/perception/models/v8_pose_n_hailo8.hef.
+DEFAULT_POSE_HEF = os.path.join(SCRIPT_DIR, "models", "v8_pose_n_hailo8.hef")
+
+# COCO 17-keypoint skeleton (pairs of indices) for visual overlay when in
+# --pose mode. Matches the same indices the gesture classifier uses.
+COCO_SKELETON_PAIRS = [
+    (5, 6), (5, 7), (7, 9), (6, 8), (8, 10),          # shoulders + arms
+    (11, 12), (5, 11), (6, 12),                        # torso
+    (11, 13), (13, 15), (12, 14), (14, 16),            # legs
+    (0, 5), (0, 6),                                    # nose to shoulders
+]
+
 # SGBM (same params as guided_calibration.py's depth viewer, halved disparity
 # range since we run at half resolution)
 SGBM_MIN_DISP = 0
@@ -165,6 +179,140 @@ def lookup_depth(depth_map_half, cx_full, cy_full, patch=DEPTH_PATCH):
 
 
 # =============================================================================
+# POSE DECODING (--pose flag)
+# =============================================================================
+
+# YOLOv8-pose Hailo HEFs return one detection per person with bbox + 17
+# keypoints. The exact output layout depends on which version of Hailo
+# Model Zoo's post-process layer is compiled into the HEF:
+#
+#   (a) "list of per-class lists" — payload[0] is a list of length 1
+#       (pose models have one class: person). Inner list elements are
+#       arrays of length ≥ 5 + 17 * 3 = 56:
+#         [y_min, x_min, y_max, x_max, score,
+#          kp1_y, kp1_x, kp1_v, kp2_y, kp2_x, kp2_v, ..., kp17_y, kp17_x, kp17_v]
+#   (b) "dict of separated arrays" — payload[0] is {"bboxes": (N,4),
+#       "scores": (N,), "joints": (N,17,3)} or similar.
+#   (c) "flat ndarray" — payload is (B, N, 56) or (N, 56) with the same
+#       per-row layout as (a).
+#
+# The decoder below tries each shape in turn. Coordinates returned by
+# Hailo Model Zoo's NMS layer are in normalised [0, 1] letterbox-space —
+# (0,0) is the top-left of the 640×640 model input, (1,1) is bottom-right.
+# Downstream code unmaps to original-frame pixels then to the autonomy
+# stack's [-1, +1] frame-centred convention.
+#
+# UNTESTED ON LIVE HAILO: this function was drafted from the Hailo Model
+# Zoo reference layout but has not been exercised against the actual
+# v8_pose_n_hailo8.hef. The first Pi run is the validation. If the
+# returned list is empty when a person is clearly in frame, dump the
+# raw_output keys + shapes to console for diagnosis.
+
+
+def decode_pose_detections(raw_output, confidence_threshold):
+    """Decode YOLOv8-pose Hailo output into [{bbox, score, class_id, keypoints_norm}, ...].
+
+    `bbox` is in normalised letterbox xyxy ([0,1] x [0,1]).
+    `keypoints_norm` is a (17, 3) numpy array of (x_norm, y_norm, conf)
+    in the same normalised letterbox space, ready for unmap_keypoint().
+
+    Returns an empty list when the output shape doesn't match any known
+    layout (caller can then choose to print diagnostics).
+    """
+    if not raw_output:
+        return []
+
+    payload = next(iter(raw_output.values()))
+    detections: list[dict] = []
+
+    def _push_row(row):
+        """Per-row decode for the flat / list-of-classes layout."""
+        if len(row) < 5 + 17 * 3:
+            return
+        score = float(row[4])
+        if score < confidence_threshold:
+            return
+        # [y_min, x_min, y_max, x_max] → [x_min, y_min, x_max, y_max] (xyxy)
+        bbox = [float(row[1]), float(row[0]), float(row[3]), float(row[2])]
+        # 51 floats: (kp1_y, kp1_x, kp1_v) × 17 → (17, 3) with (x, y, v)
+        kp_flat = np.asarray(row[5:5 + 17 * 3], dtype=float).reshape(17, 3)
+        # Swap y,x → x,y; keep visibility/confidence column.
+        kp_norm = kp_flat[:, [1, 0, 2]]
+        detections.append({
+            "bbox": bbox,
+            "score": score,
+            "class_id": 0,
+            "keypoints_norm": kp_norm,
+        })
+
+    # Layout (a): list (per batch) → list (per class) → list (per detection)
+    if isinstance(payload, list):
+        # Hailo outputs are batched even with B=1; unwrap the outer list.
+        per_image = payload[0] if payload else None
+
+        # Layout (b): dict of separated arrays.
+        if isinstance(per_image, dict):
+            bboxes = per_image.get("bboxes")
+            scores = per_image.get("scores")
+            joints = per_image.get("joints", per_image.get("keypoints"))
+            if bboxes is not None and scores is not None and joints is not None:
+                for i, score in enumerate(scores):
+                    if float(score) < confidence_threshold:
+                        continue
+                    bbox = bboxes[i]
+                    detections.append({
+                        # Convert [y_min, x_min, y_max, x_max] → xyxy
+                        "bbox": [float(bbox[1]), float(bbox[0]),
+                                 float(bbox[3]), float(bbox[2])],
+                        "score": float(score),
+                        "class_id": 0,
+                        "keypoints_norm": np.asarray(joints[i])[:, [1, 0, 2]],
+                    })
+                return detections
+
+        # Layout (a continued): nested per-class list (pose has 1 class).
+        if isinstance(per_image, list):
+            classes = per_image if (
+                per_image and isinstance(per_image[0], (list, np.ndarray))
+                and len(per_image[0]) and isinstance(per_image[0][0], (list, np.ndarray))
+            ) else [per_image]
+            for class_dets in classes:
+                for det in class_dets:
+                    _push_row(det)
+            return detections
+
+    # Layout (c): flat ndarray.
+    if isinstance(payload, np.ndarray):
+        arr = payload
+        if arr.ndim == 3:
+            arr = arr[0]  # (B, N, K) → (N, K), B=1
+        if arr.ndim == 2 and arr.shape[1] >= 5 + 17 * 3:
+            for row in arr:
+                _push_row(row)
+            return detections
+
+    # Unknown shape — caller prints diagnostics.
+    return detections
+
+
+def unmap_keypoints(kp_norm, scale, pad_w, pad_h, orig_w, orig_h):
+    """Convert (17, 3) letterbox-normalised keypoints to original-frame
+    pixel coordinates, returning a (17, 3) array of (x_px, y_px, conf).
+
+    Mirrors unmap_box() but for points. Coordinates outside the model's
+    640×640 letterbox padding are clamped to the original image bounds.
+    """
+    out = np.empty_like(kp_norm)
+    for i, (x_n, y_n, v) in enumerate(kp_norm):
+        x_px = (x_n * INPUT_SIZE - pad_w) / scale
+        y_px = (y_n * INPUT_SIZE - pad_h) / scale
+        x_px = max(0.0, min(float(orig_w - 1), float(x_px)))
+        y_px = max(0.0, min(float(orig_h - 1), float(y_px)))
+        out[i] = (x_px, y_px, float(v))
+    return out
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -189,7 +337,19 @@ def main():
     parser.add_argument("--no-gui", action="store_true",
                         help="Skip cv2 window setup. Useful for headless runs "
                              "that only need JSONL emit (e.g. over SSH).")
+    parser.add_argument("--pose", action="store_true",
+                        help="Use the YOLOv8-pose Hailo model (default HEF "
+                             f"{DEFAULT_POSE_HEF}) and emit per-detection "
+                             "keypoints into the JSONL — required for the "
+                             "autonomy gesture pipeline. Untested on live "
+                             "Hailo at first integration; first Pi run is "
+                             "the validation.")
     args = parser.parse_args()
+
+    # If --pose is set and the user didn't override --hef, swap to the
+    # pose HEF default. (Explicit --hef still wins.)
+    if args.pose and args.hef == DEFAULT_HEF:
+        args.hef = DEFAULT_POSE_HEF
 
     print("=" * 60)
     print("HANDHELD PERCEPTION: STEREO DEPTH + YOLO ON HAILO-8")
@@ -297,7 +457,13 @@ def main():
         npu_ms = (time.perf_counter() - npu_t0) * 1000.0
         npu_ms_ema = 0.9 * npu_ms_ema + 0.1 * npu_ms if npu_ms_ema else npu_ms
 
-        detections = decode_detections(raw_out, args.threshold)
+        if args.pose:
+            detections = decode_pose_detections(raw_out, args.threshold)
+            # Pose models only output one class: person.
+            label_override = "person"
+        else:
+            detections = decode_detections(raw_out, args.threshold)
+            label_override = None
 
         # Build the per-frame record while we annotate: collect each
         # detection's class / score / unmapped bbox / depth / centroid for
@@ -313,8 +479,10 @@ def main():
             depth_m = lookup_depth(depth_map, cx, cy)
 
             class_id = det["class_id"]
-            label = COCO_CLASSES[class_id] if 0 <= class_id < len(COCO_CLASSES) \
+            label = label_override if label_override is not None else (
+                COCO_CLASSES[class_id] if 0 <= class_id < len(COCO_CLASSES)
                 else f"id{class_id}"
+            )
             depth_str = f"{depth_m:.2f}m" if not np.isnan(depth_m) else "?m"
             color = color_for_class(class_id)
 
@@ -323,13 +491,39 @@ def main():
             cx_norm = (cx - orig_w / 2.0) / (orig_w / 2.0)
             cy_norm = (cy - orig_h / 2.0) / (orig_h / 2.0)
 
-            annotated.append({
+            entry = {
                 "class_name": label,
                 "confidence": float(det["score"]),
                 "bbox_xyxy": [int(x1), int(y1), int(x2), int(y2)],
                 "depth_m": None if np.isnan(depth_m) else float(depth_m),
                 "bbox_centroid_norm": [float(cx_norm), float(cy_norm)],
-            })
+            }
+
+            # Pose: add 17-keypoint payload normalised to [-1, +1] frame-
+            # centred coords (matches PerceptionSource.Detection.keypoints).
+            if args.pose and "keypoints_norm" in det:
+                kp_px = unmap_keypoints(det["keypoints_norm"], scale, pad_w,
+                                        pad_h, orig_w, orig_h)
+                kp_out: list[list[float]] = []
+                for x_px, y_px, conf in kp_px:
+                    x_n = (x_px - orig_w / 2.0) / (orig_w / 2.0)
+                    y_n = (y_px - orig_h / 2.0) / (orig_h / 2.0)
+                    kp_out.append([float(x_n), float(y_n), float(conf)])
+                    # Draw the keypoint on the display if confident.
+                    if conf >= 0.3:
+                        cv2.circle(display, (int(x_px), int(y_px)), 3,
+                                   (0, 255, 255), -1)
+                entry["keypoints"] = kp_out
+
+                # Draw the COCO skeleton in red for visual feedback.
+                for a, b in COCO_SKELETON_PAIRS:
+                    xa, ya, va = kp_px[a]
+                    xb, yb, vb = kp_px[b]
+                    if va >= 0.3 and vb >= 0.3:
+                        cv2.line(display, (int(xa), int(ya)),
+                                 (int(xb), int(yb)), (0, 0, 255), 2)
+
+            annotated.append(entry)
 
             cv2.rectangle(display, (x1, y1), (x2, y2), color, 2)
             cv2.circle(display, (cx, cy), 4, color, -1)
