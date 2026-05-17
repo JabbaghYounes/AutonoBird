@@ -94,9 +94,9 @@ These would lift the §6.4 "not measured" outcomes without leaving the simulator
 
 | | Item | Pri | Notes |
 |---|---|---|---|
-| `[ ]` | **Wire Jarvis into a flight command map** | 🟡 | Voice intents → MAVLink commands. ("Jarvis, return home" → `NAV_RTL`.) |
-| `[ ]` | **Gesture control** | 🟡 | YOLO-pose detection on the AR0144 left feed → gesture vocabulary → command map. Weight saving vs USB mic + speaker (~25 g). |
-| `[ ]` | **Speaker / mic weight audit** | 🟢 | Measure actual weight of existing USB peripherals; decide if gesture replaces voice for the airborne use case. |
+| `[ ]` | **Wire Jarvis into a flight command map** | 🟢 | Voice intents → MAVLink commands. **Deprioritised 2026-05-17**: acoustic SNR is hostile on an aerial drone (motor noise ~75-85 dB at the on-board mic, operator's voice attenuated 6 dB / 2× distance, mic is on wrong end of the link) — gestures are the right primary in-flight modality. Voice stays useful for pre/post-flight bench commands ("Jarvis, run preflight check"), so the wiring is still worth building, just not on the critical path. |
+| `[~]` | **Gesture control** | 🟡 | Code complete 2026-05-17 — Pi-rig pose perception is the remaining piece. `scripts/autonomy/gesture_classifier.py` recognises four safety-critical gestures (STOP/LAND/COME/RECEDE) from COCO-17 body keypoints with per-keypoint confidence gating and 3-frame temporal smoothing. `scripts/autonomy/gesture_action_map.py` dispatches to `Orchestrator.command_hold/land/resume/rtl` with cooldown to prevent re-fires. `Detection.keypoints` is a new optional field on the data contract (backward-compatible — older JSONL without keypoints just leaves it None). Orchestrator gains `--enable-gestures` and a background gesture loop. `test_gesture_pipeline.py` validates all 5 paths end-to-end with synthetic keypoints (no Hailo / camera needed) — all PASS. **Pi-rig remaining work**: modify `scripts/perception/depth_detect.py` to load `v8_pose_n_hailo8.hef` (already in `~/Documents/Benchy/resources/hefs/`) and emit `keypoints` in the JSONL. |
+| `[ ]` | **Speaker / mic weight audit** | 🟢 | Now mostly informational since gesture is the primary in-flight modality. Speaker still useful for audible status alerts on-bench. |
 
 ## 9. Status / observability
 

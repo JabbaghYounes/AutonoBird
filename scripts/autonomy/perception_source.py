@@ -77,12 +77,25 @@ class Detection:
     #   y = -1 at the top edge,  +1 at the bottom edge
     # Computed by the source so the planner doesn't need the original frame size.
     bbox_centroid_norm: tuple[float, float]
+    # Optional per-keypoint output for pose-capable models (e.g.
+    # YOLOv8n-pose). When present, this is a list of (x, y, confidence)
+    # triples, one per COCO body keypoint (17 in total). Coordinates are
+    # normalised the same way as bbox_centroid_norm — frame-centred,
+    # [-1, +1] on each axis. Keypoints with confidence below the source's
+    # decode threshold should be passed through with low confidence so
+    # downstream consumers can decide for themselves rather than being
+    # silently zeroed.
+    #
+    # Detection-only models (yolov8n.hef) leave this as None — the gesture
+    # classifier handles None gracefully (just doesn't fire any gestures).
+    keypoints: Optional[list[tuple[float, float, float]]] = None
 
     def __repr__(self) -> str:  # pragma: no cover
         x, y = self.bbox_centroid_norm
+        kp = f"  kp={len(self.keypoints)}" if self.keypoints else ""
         return (
             f"Detection({self.class_name} {self.confidence:.2f} "
-            f"@ {self.depth_m:.2f}m, centroid=({x:+.2f},{y:+.2f}))"
+            f"@ {self.depth_m:.2f}m, centroid=({x:+.2f},{y:+.2f}){kp})"
         )
 
 
@@ -390,6 +403,21 @@ class DepthDetectSource(PerceptionSource):
                 # disparity map). Skip — planner needs a number.
                 continue
             try:
+                # Optional per-keypoint pose output. None for detection-only
+                # models (yolov8n.hef); a 17-long list of (x, y, conf) for
+                # pose models (yolov8n-pose.hef etc.).
+                kp_raw = d.get("keypoints")
+                keypoints: Optional[list[tuple[float, float, float]]]
+                if kp_raw is None:
+                    keypoints = None
+                else:
+                    keypoints = []
+                    for kp in kp_raw:
+                        if not isinstance(kp, (list, tuple)) or len(kp) < 3:
+                            continue
+                        keypoints.append(
+                            (float(kp[0]), float(kp[1]), float(kp[2]))
+                        )
                 detections.append(
                     Detection(
                         class_name=str(d["class_name"]),
@@ -399,6 +427,7 @@ class DepthDetectSource(PerceptionSource):
                         bbox_centroid_norm=tuple(
                             float(v) for v in d["bbox_centroid_norm"]
                         ),  # type: ignore[arg-type]
+                        keypoints=keypoints,
                     )
                 )
             except (KeyError, TypeError, ValueError):

@@ -8,11 +8,12 @@ This subsystem hosts the full closed-loop autonomy stack:
 |---|---|---|
 | `state_machine.py` | ✅ live | Passive flight-state observer; nine states; Schmitt-trigger hysteresis on VFR_HUD climb rate |
 | `planner.py` | ✅ live | Reactive sector-based obstacle avoider; CRUISING/AVOIDING/IDLE/LANDING modes with entry/exit hysteresis; cached perception frame for rate-mismatch tolerance |
-| `perception_source.py` | ✅ live | Abstract perception input — `SyntheticPerceptionSource` (in-process scripted timeline) and `DepthDetectSource` (tails JSONL from `depth_detect.py --jsonl` or the Gazebo bridge) |
+| `perception_source.py` | ✅ live | Abstract perception input — `SyntheticPerceptionSource` (in-process scripted timeline) and `DepthDetectSource` (tails JSONL from `depth_detect.py --jsonl` or the Gazebo bridge). Detections carry an optional `keypoints` field (17 COCO body keypoints) used by the gesture classifier when a pose-capable model is feeding the JSONL. |
 | `gazebo_perception_bridge.py` | ✅ live | Subscribes to a Gazebo Harmonic LaserScan topic via `gz topic -e --json-output`, converts each scan into a `PerceptionFrame` record matching `depth_detect.py`'s schema. Used by the T5 Gazebo closed-loop test |
-| `orchestrator.py` | ⏳ | Wires state machine + planner + voice + gesture + LEDs together; the single program entry-point |
-| `voice_action_map.py` | ⏳ | Jarvis intent → flight command mapping |
-| `gesture_action_map.py` | ⏳ | YOLO-pose gesture → flight command mapping |
+| `orchestrator.py` | ✅ live | Single-process autonomy stack bring-up: Vehicle bridge → FSM → optional Planner → optional Gesture pipeline → optional LED bridge. Defaults to monitor mode (no commands). Exposes `command_hold/resume/land/rtl` as intent hooks for voice/gesture/external code |
+| `gesture_classifier.py` | ✅ live | Body-pose gesture recognition (STOP/LAND/COME/RECEDE) on COCO-17 keypoints; per-keypoint confidence gating + 3-frame temporal smoothing |
+| `gesture_action_map.py` | ✅ live | Dispatches recognised gestures to orchestrator intent methods with cooldown to prevent re-fires |
+| `voice_action_map.py` | ⏳ | Jarvis intent → orchestrator intent mapping. Deprioritised relative to gestures — see "Why gesture is the primary modality" below |
 
 | Test / harness | Purpose |
 |---|---|
@@ -23,6 +24,7 @@ This subsystem hosts the full closed-loop autonomy stack:
 | `test_hover_stability.py` | **T4 dissertation evidence**: 60 s GUIDED auto-hold drift measurement |
 | `test_mission_replicate.py` | **T6 dissertation evidence**: 10-run box mission replication with per-run extent stats |
 | `test_wind_sweep.py` | Wind / disturbance rejection sweep at `SIM_WIND_SPD ∈ {0, 5, 10, 15}` m/s — runs both T4 and T6 at each level |
+| `test_gesture_pipeline.py` | Unit + integration test for the gesture stack — synthetic keypoints → classifier → action map → mock orchestrator. No Hailo / camera needed. |
 | `make_synthetic_jsonl.py` | Generate a synthetic JSONL session for `test_avoidance_jsonl.py` |
 
 Architecture note: this subsystem **imports the bridge** from `../flight-controller/bridge.py` via `sys.path` injection. The bridge stays in flight-controller because it's the transport layer; autonomy is decision-making on top of it.
@@ -127,3 +129,78 @@ The custom Gazebo model and world used by the T5 test live under `../sitl/gazebo
 - `worlds/iris_obstacle.sdf` — runway world with a 1 m diameter × 12 m tall collision-bodied red cylinder placed 12 m N of home, in the iris's cruise path
 
 The T5 closed-loop test (`test_avoidance_gazebo.py`) is the strongest SITL-track evidence the autonomy stack produces. Result: 1.92 m min clearance from the cylinder surface (6.4× over the 0.3 m dissertation T5 bound), full CRUISING → AVOIDING → CRUISING cycle, bird passes obstacle to 17 m N. See dissertation § 6.2 *T5 — Closed-loop avoidance against a Gazebo-physics-grounded obstacle*.
+
+## Gesture pipeline
+
+A body-pose classifier converts the operator's posture into discrete drone commands. Four gestures, all safety-critical and unambiguous from 17 COCO body keypoints:
+
+| Gesture | Pose | Intent | Orchestrator method |
+|---|---|---|---|
+| STOP | T-pose (arms out horizontal) | hold position | `command_hold()` (pauses planner) |
+| LAND | both arms straight down | land here | `command_land()` (planner stops, vehicle LAND) |
+| COME | both arms straight up | resume / approach | `command_resume()` |
+| RECEDE | arms crossed in front of chest (X-pose) | back off | `command_hold()` for v1; reverse-cruise is a future extension |
+
+Pipeline:
+
+```
+YOLOv8n-pose on Hailo-8 (depth_detect.py --pose, future work)
+        │ COCO-17 keypoints per detection
+        ▼
+DepthDetectSource (perception_source.py)
+        │ PerceptionFrame with Detection.keypoints populated
+        ▼
+GestureClassifier.update(frame) → Gesture
+        │ per-keypoint confidence gating + 3-frame temporal smoothing
+        ▼
+GestureActionMap.dispatch(gesture)
+        │ cooldown to suppress re-fires
+        ▼
+Orchestrator.command_hold / command_land / command_resume / command_rtl
+```
+
+The classifier picks the **closest person** as the primary operator — bystanders standing further from the drone don't trigger commands.
+
+Per-keypoint confidence below `min_keypoint_confidence` (default 0.5) is treated as missing; gestures that depend on a missing keypoint stay NONE rather than firing on noise. The action map's cooldown (default 2 s) prevents the same gesture from dispatching repeatedly within one continuous hold.
+
+### Why gesture is the primary in-flight modality
+
+The original spec had voice as the primary command channel. The acoustic environment of an aerial drone makes that unworkable in flight:
+
+- **Motor noise dominates the on-board mic** at ~75-85 dB from 1 m, swamping operator voice at any non-trivial altitude
+- **Operator voice attenuates ~6 dB per doubling of distance** — at 10 m AGL the operator's voice is 20 dB quieter relative to the rotor noise
+- **The mic is on the drone**, not the operator — fixing this means downlinking audio from a body-worn mic, which adds a separate radio channel
+- **Voice latency** (wake-word + ASR + LLM intent + MAVLink) stacks to 1.5–3 s; gestures are sub-second perception-to-action because they share the existing perception loop
+
+Visual perception isn't degraded by motor noise. The AR0144 stereo + Hailo NPU already point at the operator during cruise and return paths. Gesture → action runs through the same 138 ms loop that does obstacle avoidance, so it inherits the loop's latency budget for free.
+
+**Voice doesn't go away** — it remains useful for:
+- Pre-flight commands while the drone is on the bench ("Jarvis, run preflight check")
+- Post-flight summaries / mission review
+- Configuration / development from the operator station
+
+But voice is demoted from the in-flight command path. FR6 (voice recognition capability) stays a met requirement; FR9 (visual + voice descriptions) stays where it is. The primary in-flight command interface is gesture.
+
+### Testing the gesture pipeline
+
+Without the Pi rig (no Hailo, no AR0144), the dev workstation runs `test_gesture_pipeline.py` end-to-end against synthetic keypoints:
+
+```bash
+source venv/bin/activate
+python test_gesture_pipeline.py
+```
+
+Five sub-tests cover: per-gesture classification, low-confidence rejection, alternation-noise rejection, action map dispatch correctness, cooldown behaviour, and full classifier+action-map composition. All five pass against the canonical-pose synthetic fixtures.
+
+### Running gestures live (Pi rig)
+
+1. Flash the Hailo pose model into the perception subsystem (one of `~/Documents/Benchy/resources/hefs/v8_pose_n_hailo8.hef`, `v11_pose_n_hailo8.hef`).
+2. Extend `scripts/perception/depth_detect.py` to decode pose output and emit keypoints in the JSONL (currently emits detection-only output — future work).
+3. Launch the orchestrator with gestures enabled, pointed at the JSONL the perception pipeline is writing:
+
+```bash
+python orchestrator.py --enable-gestures \
+    --perception jsonl --jsonl-path /tmp/perception.jsonl --tail-from-end
+```
+
+The orchestrator's gesture loop pulls the latest frame at `--gesture-rate-hz` (default 10 Hz), classifies, and dispatches.

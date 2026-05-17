@@ -67,6 +67,16 @@ from perception_source import (  # noqa: E402
 from planner import Planner, PlannerMode  # noqa: E402
 from state_machine import FlightState, StateMachine  # noqa: E402
 
+# Gesture pipeline is optional — orchestrator can run without it. We
+# only probe importability at module load; concrete instances are
+# constructed lazily inside attach_gestures().
+try:
+    import gesture_classifier  # noqa: F401
+    import gesture_action_map  # noqa: F401
+    _GESTURES_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _GESTURES_AVAILABLE = False
+
 
 # ---------------------------------------------------------------------- #
 # Defaults                                                               #
@@ -163,6 +173,11 @@ class Orchestrator:
         self.perception: Optional[PerceptionSource] = None
         self.led: object = _NullLed()
 
+        # Gesture subsystem (opt-in via attach_gestures()).
+        self.gesture_classifier: object = None
+        self.gesture_action_map: object = None
+        self._gesture_thread: Optional[threading.Thread] = None
+
         self._stop = threading.Event()
         self._status_thread: Optional[threading.Thread] = None
 
@@ -248,10 +263,145 @@ class Orchestrator:
         self.perception.start()
         self.planner.start()
 
+    # ---- intent commands (called by gesture / voice / external code) ---- #
+
+    def command_hold(self) -> None:
+        """Pause autonomy and let the autopilot hold position.
+
+        The reactive planner pauses (no more velocity setpoints). In
+        GUIDED mode the autopilot then holds the last commanded
+        position. The vehicle stays armed and airborne; nothing else
+        changes. Safe to call from any state — no-op if there's no
+        planner attached.
+        """
+        log("INTENT: HOLD")
+        if self.planner is not None:
+            try:
+                self.planner.pause()
+            except Exception as e:
+                log(f"  planner.pause() failed: {e}")
+
+    def command_resume(self) -> None:
+        """Resume autonomy after a hold.
+
+        Restarts the planner from where it paused. No-op if no planner
+        is attached or it was never paused.
+        """
+        log("INTENT: RESUME")
+        if self.planner is not None:
+            try:
+                self.planner.resume()
+            except Exception as e:
+                log(f"  planner.resume() failed: {e}")
+
+    def command_land(self) -> None:
+        """Initiate an immediate descent and landing.
+
+        Stops the reactive planner outright (not pause — the bird is
+        landing, no point keeping the planner loop alive) and switches
+        the autopilot to LAND mode at the current XY position.
+        """
+        log("INTENT: LAND")
+        if self.planner is not None:
+            try:
+                self.planner.stop()
+            except Exception as e:
+                log(f"  planner.stop() failed: {e}")
+        if self.vehicle is not None:
+            try:
+                self.vehicle.land()
+            except Exception as e:
+                log(f"  vehicle.land() failed: {e}")
+
+    def command_rtl(self) -> None:
+        """Return-to-launch — autopilot navigates back to the home position
+        and lands. Stops the reactive planner before handing off."""
+        log("INTENT: RTL")
+        if self.planner is not None:
+            try:
+                self.planner.stop()
+            except Exception as e:
+                log(f"  planner.stop() failed: {e}")
+        if self.vehicle is not None:
+            try:
+                self.vehicle.rtl()
+            except Exception as e:
+                log(f"  vehicle.rtl() failed: {e}")
+
+    # ---- gesture subsystem ---- #
+
+    def attach_gestures(
+        self,
+        perception: Optional[PerceptionSource] = None,
+        rate_hz: float = 10.0,
+    ) -> None:
+        """Attach the body-pose gesture classifier + action map.
+
+        Uses the orchestrator's existing perception source by default —
+        the gesture loop and the planner share the same perception
+        stream (both want the same pose / depth events). Pass `perception`
+        explicitly to use a separate source for testing.
+        """
+        if not _GESTURES_AVAILABLE:
+            log("WARN: gesture module not importable — gestures disabled")
+            return
+        src = perception if perception is not None else self.perception
+        if src is None:
+            raise RuntimeError(
+                "no perception source available — attach_planner() first "
+                "or pass perception= to attach_gestures()"
+            )
+        # Late import keeps tests on systems without numpy/torch lean.
+        from gesture_classifier import GestureClassifier
+        from gesture_action_map import GestureActionMap
+        self.gesture_classifier = GestureClassifier()
+        self.gesture_action_map = GestureActionMap(
+            self,
+            on_dispatch=lambda g: log(f"GESTURE → {g.name} dispatched"),
+        )
+        self._gesture_perception = src
+        self._gesture_period = 1.0 / float(rate_hz)
+        log(f"gesture pipeline attached (rate {rate_hz} Hz)")
+
+    def start_gestures(self) -> None:
+        """Launch the gesture-recognition loop in a background thread."""
+        if self.gesture_classifier is None or self.gesture_action_map is None:
+            raise RuntimeError("call attach_gestures() first")
+        self._gesture_thread = threading.Thread(
+            target=self._gesture_loop,
+            name="orchestrator-gesture",
+            daemon=True,
+        )
+        self._gesture_thread.start()
+        log("gesture loop started")
+
+    def _gesture_loop(self) -> None:
+        """Per-frame: pull latest perception, classify, dispatch."""
+        last_logged: Optional[str] = None
+        while not self._stop.is_set():
+            frame = self._gesture_perception.latest()
+            if frame is not None:
+                # classifier.update is non-mutating from the caller's POV;
+                # it owns its own state.
+                g = self.gesture_classifier.update(frame)  # type: ignore[union-attr]
+                if g.name != last_logged:
+                    # Log raw classifier output once per change for debug
+                    # (debounced separately from action-map cooldown).
+                    if g.name != "NONE":
+                        log(f"GESTURE.raw={g.name}")
+                    last_logged = g.name
+                self.gesture_action_map.dispatch(g)  # type: ignore[union-attr]
+            self._stop.wait(self._gesture_period)
+
     def stop(self) -> None:
         """Tear down in reverse order. Idempotent — safe to call from a
         signal handler."""
         self._stop.set()
+        if self._gesture_thread is not None and self._gesture_thread.is_alive():
+            try:
+                self._gesture_thread.join(timeout=2.0)
+            except Exception:
+                pass
         if self.planner is not None:
             try:
                 self.planner.stop()
@@ -378,6 +528,19 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="run the reactive planner — only safe if the vehicle is in GUIDED and airborne",
     )
+    # Gestures (opt-in)
+    ap.add_argument(
+        "--enable-gestures",
+        action="store_true",
+        help="run the body-pose gesture classifier; gestures dispatch to "
+             "orchestrator.command_* methods (HOLD / LAND / RESUME / RECEDE)",
+    )
+    ap.add_argument(
+        "--gesture-rate-hz",
+        type=float,
+        default=10.0,
+        help="how often the gesture loop pulls a perception frame",
+    )
     ap.add_argument(
         "--perception",
         choices=["synthetic", "jsonl"],
@@ -458,13 +621,18 @@ def main() -> int:
         return 1
 
     try:
-        if args.enable_planner:
+        # Build a single perception source if any consumer (planner or
+        # gestures) needs one. Both pipelines share it.
+        perception = None
+        if args.enable_planner or args.enable_gestures:
             perception = build_perception_source(
                 kind=args.perception,
                 jsonl_path=args.jsonl_path,
                 tail_from_end=args.tail_from_end,
                 rate_hz=args.planner_rate_hz,
             )
+
+        if args.enable_planner:
             orch.attach_planner(
                 perception=perception,
                 cruise_speed_ms=args.cruise_speed_ms,
@@ -477,9 +645,31 @@ def main() -> int:
             log("PLANNER ENGAGED — autonomous velocity commands will be issued. "
                 "Ensure the vehicle is in GUIDED and airborne, and pilot is "
                 "ready to override via RC.")
-        else:
+
+        if args.enable_gestures:
+            if not _GESTURES_AVAILABLE:
+                log("FAIL: --enable-gestures requested but gesture_classifier "
+                    "/ gesture_action_map could not be imported.")
+                return 1
+            if perception is None:
+                log("FAIL: --enable-gestures requires a perception source. "
+                    "Pass --perception jsonl --jsonl-path PATH (or --perception synthetic).")
+                return 1
+            if not args.enable_planner:
+                # Gestures alone still need the source running so latest()
+                # returns frames.
+                perception.start()
+            orch.attach_gestures(
+                perception=perception,
+                rate_hz=args.gesture_rate_hz,
+            )
+            orch.start_gestures()
+            log("GESTURES ENGAGED — STOP / LAND / COME / RECEDE will dispatch "
+                "to orchestrator.command_* methods.")
+
+        if not (args.enable_planner or args.enable_gestures):
             log("monitor mode (no commands will be sent). "
-                "Use --enable-planner to attach the reactive avoider.")
+                "Use --enable-planner / --enable-gestures to attach autonomy.")
 
         orch.run_forever()
         return 0
