@@ -1,0 +1,240 @@
+AutonoBird — Physical drone walkaround test
+============================================
+
+Purpose: validate the full software stack (perception + autonomy / orchestrator)
+on the airframe-mounted Pi + AR0144 + AI HAT+, with the operator hand-carrying
+the powered-up drone. No motors spun, no props on. Tests perception → planner
+→ FC command surface end-to-end while grounded.
+
+Why this works: the planner does not gate on FSM AIRBORNE state, so it runs
+through CRUISING / AVOIDING transitions regardless of flight status. Velocity
+setpoints get sent over MAVLink, but the FC discards them while disarmed / not
+in GUIDED. Full software coverage, zero motion risk.
+
+
+Quick path — use the bundled script
+-----------------------------------
+
+The standard workflow is wrapped in ./physical-drone-test.sh at the repo
+root. It runs pre-flight, creates the persistent log directory, and
+launches both processes in detached tmux sessions.
+
+  cd ~/Documents/AutonoBird
+
+  ./physical-drone-test.sh              # standard test
+  ./physical-drone-test.sh --pose       # + pose pipeline + gestures
+                                        #   (first live-Hailo pose validation,
+                                        #    retires the side-tabled item)
+  ./physical-drone-test.sh status       # running sessions + log tails
+  ./physical-drone-test.sh stop         # graceful tear-down (Ctrl+C the
+                                        #   processes, then kill tmux)
+
+The script auto-installs pyserial into the autonomy venv if missing,
+sets DISPLAY=:0 so the cv2 GUI lands on the VNC desktop, and writes all
+logs to scripts/sitl/logs/walk_<timestamp>/. Attach to the live output
+with:
+
+  tmux attach -t walk-orch              # FSM / planner / STATUS lines
+  tmux attach -t walk-perception        # perception fps, det counts, GUI
+
+Detach without killing the process: Ctrl+B then D.
+
+
+Manual path — what the script does, step by step
+------------------------------------------------
+
+If the script isn't usable for some reason (different host layout, want
+to tweak flags inline, debugging the script itself) here's the same
+flow by hand.
+
+Pre-flight (Pi shell)
+~~~~~~~~~~~~~~~~~~~~~
+
+Confirm 4S LiPo connected, UBEC powering the Pi, FC powered.
+
+  ls /dev/ttyACM*
+  # Expect /dev/ttyACM0 (Pi sees the FC over USB).
+  # If different (e.g. ttyACM1), substitute in the orchestrator command below.
+
+  lsusb -t
+  # Expect AR0144 enumerated on Bus 01 at 480M with two video interfaces.
+
+  dmesg | grep -iE "under.?volt|throttl" | tail -20
+  # Expect empty output (no under-voltage / no throttling events).
+
+Set up session log directory (persistent, not /tmp)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once per test session. Creates a timestamped folder under the existing
+scripts/sitl/logs/ convention so artefacts survive reboot.
+
+  mkdir -p ~/Documents/AutonoBird/scripts/sitl/logs/walk_$(date +%Y%m%d-%H%M)
+  ls -1d ~/Documents/AutonoBird/scripts/sitl/logs/walk_* | tail -1
+  # Both terminals below auto-pick the latest walk_* via the same pattern.
+
+Terminal A — perception with live GUI + JSONL (VNC desktop)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  tmux new -s walk-perception
+
+  # Inside the tmux session:
+  cd ~/Documents/AutonoBird/scripts/perception && source venv/bin/activate && \
+    WALK_DIR=$(ls -1d ~/Documents/AutonoBird/scripts/sitl/logs/walk_* | tail -1) && \
+    echo "Saving to $WALK_DIR" && \
+    python3 depth_detect.py \
+      --jsonl $WALK_DIR/perception.jsonl \
+      --threshold 0.35 \
+      2>&1 | tee $WALK_DIR/perception.log
+
+Terminal B — orchestrator with planner + bridge to FC (SSH or VNC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  tmux new -s walk-orch
+
+  # Inside the tmux session:
+  cd ~/Documents/AutonoBird/scripts/autonomy && source venv/bin/activate && \
+    WALK_DIR=$(ls -1d ~/Documents/AutonoBird/scripts/sitl/logs/walk_* | tail -1) && \
+    echo "Saving to $WALK_DIR" && \
+    python3 orchestrator.py \
+      --connection-uri /dev/ttyACM0 \
+      --enable-planner \
+      --perception jsonl \
+      --jsonl-path $WALK_DIR/perception.jsonl \
+      --tail-from-end \
+      2>&1 | tee $WALK_DIR/orch.log
+
+Pose mode (gesture pipeline live validation)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adds COCO-17 body keypoints to the JSONL and engages the gesture
+classifier in the orchestrator. Two changes from the default commands:
+
+# Terminal A — replace the depth_detect line with --pose:
+  python3 depth_detect.py \
+    --pose \
+    --jsonl $WALK_DIR/perception.jsonl \
+    --threshold 0.35 \
+    2>&1 | tee $WALK_DIR/perception.log
+
+# Terminal B — add --enable-gestures:
+  python3 orchestrator.py \
+    --connection-uri /dev/ttyACM0 \
+    --enable-planner \
+    --enable-gestures \
+    --perception jsonl \
+    --jsonl-path $WALK_DIR/perception.jsonl \
+    --tail-from-end \
+    2>&1 | tee $WALK_DIR/orch.log
+
+During the walk, with operator visible in frame at 1.5-2.5 m, hold
+each gesture for ~2 s:
+
+  STOP    — T-pose (arms out horizontal)    → command_hold
+  LAND    — both arms straight down          → command_land
+  COME    — both arms straight up            → command_resume
+  RECEDE  — arms crossed in front (X-pose)   → command_hold
+
+tmux survival tips
+~~~~~~~~~~~~~~~~~~
+
+  Ctrl+B then D                        # detach (process keeps running)
+  tmux attach -t walk-perception       # reattach after SSH/VNC drop
+  tmux attach -t walk-orch
+  tmux ls                              # list running sessions
+  tmux kill-session -t walk-perception # tear down
+
+
+What to watch (terminal B output)
+---------------------------------
+
+STATUS line every 1 s, e.g.:
+  STATUS  fsm=NO_FIX            mode=STABILIZE  armed=N  alt=—  ...  planner=CRUISING
+
+Planner transitions on obstacle entry / exit:
+  Planner: CRUISING -> AVOIDING        (obstacle <1.5 m in front)
+  Planner: AVOIDING -> CRUISING        (clear >2.0 m)
+
+FSM transitions:
+  FSM: DISCONNECTED -> NO_FIX           (indoors, expected — GPS not locked)
+  FSM: NO_FIX -> PREARMED               (outdoors with sky view, satellites OK)
+
+Pose mode adds:
+  GESTURE.raw=STOP                      (raw classifier output, debug)
+  GESTURE → STOP dispatched             (action map fired after cooldown)
+  INTENT: HOLD                          (orchestrator received the intent)
+
+No BridgeError / heartbeat-timeout messages — those indicate Pi-FC link issues.
+
+Terminal A: 6-8 fps heartbeat with det=N count, JSONL growing at ~7 lines/s.
+
+
+Walk pattern
+------------
+
+1. Static baseline (~30 s)
+   Drone on bench, terminals running. Confirm STATUS lines, no errors.
+
+2. Stationary detection (~60 s)
+   Walk in front of the camera, vary distance from ~3 m down to ~0.5 m.
+   Planner should switch CRUISING -> AVOIDING at ~1.5 m and back at ~2.0 m.
+
+3. Carry-and-pan (~2-3 min)
+   Pick up the drone, slowly carry it around the room, pan across obstacles.
+   Validates perception works while the camera is moving — precondition
+   for any actual flight.
+
+4. Provoke recovery (~60 s)
+   Point camera at a wall <1.5 m, then turn away. Should see clean
+   AVOIDING -> CRUISING transition with no flapping.
+
+5. (Pose mode only) Gesture exercise (~2-3 min)
+   Stand 1.5-2.5 m in front of the drone, fully in frame. Hold each
+   gesture for ~2 s and confirm "INTENT: ..." appears in terminal B
+   after the cooldown.
+
+
+Stopping the test
+-----------------
+
+Bundled script:
+  ./physical-drone-test.sh stop        # graceful: Ctrl+C, then kill tmux
+
+Manual:
+  Ctrl+C inside each tmux session, then:
+  tmux kill-session -t walk-perception
+  tmux kill-session -t walk-orch
+
+Either way, logs already live in the session folder under
+scripts/sitl/logs/walk_<timestamp>/.
+
+
+Post-walk review (on the Pi)
+----------------------------
+
+Quick one-shot via the bundled script:
+  ./physical-drone-test.sh status
+
+Manual:
+  WALK_DIR=$(ls -1d ~/Documents/AutonoBird/scripts/sitl/logs/walk_* | tail -1)
+  echo "Reviewing $WALK_DIR"
+
+  wc -l $WALK_DIR/perception.jsonl                       # frames recorded
+  grep -E "Planner: " $WALK_DIR/orch.log                 # planner transitions
+  grep -E "FSM: "     $WALK_DIR/orch.log                 # FSM transitions
+  grep -iE "GESTURE|INTENT" $WALK_DIR/orch.log           # gestures (pose mode)
+  grep -iE "error|fail|timeout" $WALK_DIR/orch.log       # anything broken
+
+
+Pull logs onto the dev workstation (for archival / analysis)
+------------------------------------------------------------
+
+From the workstation, substitute the Pi hostname or IP:
+
+  cd ~/Documents/AutonoBird/scripts/sitl/logs/
+  scp -r snpi@raspberrypi.local:Documents/AutonoBird/scripts/sitl/logs/walk_* .
+
+If raspberrypi.local doesn't resolve, find the Pi's IP first:
+  # On the Pi:
+  ip addr show wlan0
+  # Then from the workstation:
+  scp -r snpi@<pi-ip>:Documents/AutonoBird/scripts/sitl/logs/walk_* .
