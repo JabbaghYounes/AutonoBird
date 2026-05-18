@@ -154,8 +154,8 @@ tmux survival tips
   tmux kill-session -t walk-perception # tear down
 
 
-What to watch (terminal B output)
----------------------------------
+What to watch (orchestrator output — walk-orch window or terminal B)
+--------------------------------------------------------------------
 
 STATUS line every 1 s, e.g.:
   STATUS  fsm=NO_FIX            mode=STABILIZE  armed=N  alt=—  ...  planner=CRUISING
@@ -175,7 +175,8 @@ Pose mode adds:
 
 No BridgeError / heartbeat-timeout messages — those indicate Pi-FC link issues.
 
-Terminal A: 6-8 fps heartbeat with det=N count, JSONL growing at ~7 lines/s.
+Perception output (walk-perception tmux session): 6-8 fps heartbeat with
+det=N count, JSONL growing at ~7 lines/s.
 
 
 Walk pattern
@@ -199,8 +200,8 @@ Walk pattern
 
 5. (Pose mode only) Gesture exercise (~2-3 min)
    Stand 1.5-2.5 m in front of the drone, fully in frame. Hold each
-   gesture for ~2 s and confirm "INTENT: ..." appears in terminal B
-   after the cooldown.
+   gesture for ~2 s and confirm "INTENT: ..." appears in the walk-orch
+   window after the cooldown.
 
 
 Stopping the test
