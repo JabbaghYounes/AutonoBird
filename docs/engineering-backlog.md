@@ -33,9 +33,9 @@ Bench rig stays handheld today. Until the stack is mounted on the drone, nothing
 
 | | Item | Pri | Notes |
 |---|---|---|---|
-| `[ ]` | **Mount AI HAT+ + AR0144 stereo camera on the airframe** | 🔴 | Forward-facing, slight down-tilt for indoor obstacle clearance. Carbon top plate or new 3D-printed bracket. |
-| `[ ]` | **Vibration-damped camera mount** | 🔴 | Silicone grommets or foam tape. SGBM is motion-sensitive; § 6.3 explicitly notes airframe vibration on disparity is unmeasured. |
-| `[ ]` | **LiPo-powered bench test of full compute stack** | 🟡 | UBEC → Pi 5 → AI HAT+ → AR0144 stack drawing from the 4S pack. Run `depth_detect.py` for 5+ min, confirm no brownouts, monitor UBEC temp. |
+| `[x]` | **Mount AI HAT+ + AR0144 stereo camera on the airframe** | 🔴 | ✅ 2026-05-17. Pi 5 + AI HAT+ + AR0144 mounted on the QUAV250 top deck. UBEC USB-C reaches the Pi at the new mount point. AUW with battery: 945 g (matches the dissertation's ~950 g estimate). Forward-facing geometry confirmed by the 2026-05-18 walkaround perception data — detections fired across the room as expected. |
+| `[x]` | **Vibration-damped camera mount** | 🔴 | ✅ 2026-05-17. Rubber grommets + plastic screws between the camera bracket and the airframe carbon. Plastic screws avoid bridging the damping layer with metal hardpoints. Vibration impact on SGBM will be measured properly once motors spin (still open as § 6 vibration analysis), but the walkaround confirmed clean depth values at rest (median 1.57 m person depth, σ = 0.88 m across handheld motion). |
+| `[x]` | **LiPo-powered bench test of full compute stack** | 🟡 | ✅ 2026-05-18. UBEC → Pi 5 → AI HAT+ → AR0144 → FC all running off the 4S pack. First bench run (`depth_detect.py` for 5 min): `dmesg` clean of under-voltage / throttling, AR0144 enumerated stable at USB 480M, perception loop hit the dissertation baseline (138.1 ms / 18.7 ms NPU / 75.8 ms SGBM / 6.76 Hz). Second run during the airframe walkaround (3:34 min, 1449 frames): zero under-voltage events, FC and Pi share the 4S pack cleanly, MAVLink link stable for the full session. Logs at `scripts/sitl/logs/walk_20260518-1755/`. |
 | `[ ]` | **Center-of-gravity re-check** at new AUW (~950 g) | 🟡 | Stack mass distribution shifts CG; may need to slide battery fore/aft. |
 | `[ ]` | **Thrust-margin re-test at imaging AUW** | 🟡 | First arm + low-throttle motor test at ~950 g before any hover. T/W approaches 2.5:1. |
 | `[ ]` | **Active cooler installation** (already in BOM at £5) | 🟡 | Heat management once stack is enclosed. |
