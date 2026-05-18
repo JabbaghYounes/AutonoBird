@@ -15,11 +15,11 @@ in GUIDED. Full software coverage, zero motion risk.
 Quick path — use the bundled script
 -----------------------------------
 
-The standard workflow is wrapped in ./physical-drone-test.sh at the repo
-root. It runs pre-flight, creates the persistent log directory, and
-launches both processes in detached tmux sessions.
+The standard workflow is wrapped in physical-drone-test.sh next to the
+other autonomy test runners. It runs pre-flight, creates the persistent
+log directory, and launches both processes in detached tmux sessions.
 
-  cd ~/Documents/AutonoBird
+  cd ~/Documents/AutonoBird/scripts/autonomy
 
   ./physical-drone-test.sh              # standard test
   ./physical-drone-test.sh --pose       # + pose pipeline + gestures
@@ -28,6 +28,10 @@ launches both processes in detached tmux sessions.
   ./physical-drone-test.sh status       # running sessions + log tails
   ./physical-drone-test.sh stop         # graceful tear-down (Ctrl+C the
                                         #   processes, then kill tmux)
+
+(Or call it directly from anywhere — the script resolves paths off
+$HOME/Documents/AutonoBird, not its own cwd:
+  ~/Documents/AutonoBird/scripts/autonomy/physical-drone-test.sh)
 
 The script auto-installs pyserial into the autonomy venv if missing,
 sets DISPLAY=:0 so the cv2 GUI lands on the VNC desktop, and writes all
