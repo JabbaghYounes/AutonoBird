@@ -1,0 +1,390 @@
+[17:55:07] connecting bridge to /dev/ttyACM0 ...
+[17:55:08] FSM: DISCONNECTED -> NO_FIX
+[17:55:08] attaching planner (cruise=1.5 m/s, avoidance=1.5 m/s, obstacle<1.5m -> AVOIDING, obstacle>2.0m -> CRUISING)
+[17:55:08] starting planner + perception source
+[17:55:08] Planner: IDLE -> CRUISING
+[17:55:08] PLANNER ENGAGED — autonomous velocity commands will be issued. Ensure the vehicle is in GUIDED and airborne, and pilot is ready to override via RC.
+[17:55:09] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:10] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:11] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:12] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:13] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:14] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:15] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:15] Planner: CRUISING -> AVOIDING
+[17:55:15] Planner: AVOIDING -> CRUISING
+[17:55:16] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:17] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:18] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:19] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:20] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:21] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:22] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:23] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:24] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:25] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:26] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:27] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:28] Planner: CRUISING -> AVOIDING
+[17:55:28] Planner: AVOIDING -> CRUISING
+[17:55:28] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:29] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:30] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:31] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:32] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:33] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:34] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:35] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:36] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:37] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:38] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:38] Planner: CRUISING -> AVOIDING
+[17:55:39] Planner: AVOIDING -> CRUISING
+[17:55:39] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:40] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:40] Planner: CRUISING -> AVOIDING
+[17:55:40] Planner: AVOIDING -> CRUISING
+[17:55:41] Planner: CRUISING -> AVOIDING
+[17:55:41] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:41] Planner: AVOIDING -> CRUISING
+[17:55:41] Planner: CRUISING -> AVOIDING
+[17:55:42] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:42] Planner: AVOIDING -> CRUISING
+[17:55:43] Planner: CRUISING -> AVOIDING
+[17:55:43] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:44] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:45] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:46] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:47] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:48] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:49] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:50] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:51] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:52] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:53] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:54] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:55] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:56] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:57] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:55:58] Planner: AVOIDING -> CRUISING
+[17:55:58] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:55:58] Planner: CRUISING -> AVOIDING
+[17:55:59] Planner: AVOIDING -> CRUISING
+[17:55:59] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:00] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:00] Planner: CRUISING -> AVOIDING
+[17:56:01] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:02] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:03] Planner: AVOIDING -> CRUISING
+[17:56:03] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:04] Planner: CRUISING -> AVOIDING
+[17:56:04] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:05] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:06] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:07] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:08] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:09] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:10] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:11] Planner: AVOIDING -> CRUISING
+[17:56:11] Planner: CRUISING -> AVOIDING
+[17:56:11] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:11] Planner: AVOIDING -> CRUISING
+[17:56:12] Planner: CRUISING -> AVOIDING
+[17:56:12] Planner: AVOIDING -> CRUISING
+[17:56:12] Planner: CRUISING -> AVOIDING
+[17:56:12] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:13] Planner: AVOIDING -> CRUISING
+[17:56:13] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:14] Planner: CRUISING -> AVOIDING
+[17:56:14] Planner: AVOIDING -> CRUISING
+[17:56:14] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:15] Planner: CRUISING -> AVOIDING
+[17:56:15] Planner: AVOIDING -> CRUISING
+[17:56:15] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:15] Planner: CRUISING -> AVOIDING
+[17:56:16] Planner: AVOIDING -> CRUISING
+[17:56:16] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:17] Planner: CRUISING -> AVOIDING
+[17:56:17] Planner: AVOIDING -> CRUISING
+[17:56:17] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:17] Planner: CRUISING -> AVOIDING
+[17:56:18] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:18] Planner: AVOIDING -> CRUISING
+[17:56:18] Planner: CRUISING -> AVOIDING
+[17:56:19] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:19] Planner: AVOIDING -> CRUISING
+[17:56:20] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:21] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:22] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:23] Planner: CRUISING -> AVOIDING
+[17:56:23] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:24] Planner: AVOIDING -> CRUISING
+[17:56:24] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:25] Planner: CRUISING -> AVOIDING
+[17:56:25] Planner: AVOIDING -> CRUISING
+[17:56:25] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:25] Planner: CRUISING -> AVOIDING
+[17:56:25] Planner: AVOIDING -> CRUISING
+[17:56:26] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:27] Planner: CRUISING -> AVOIDING
+[17:56:27] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:27] Planner: AVOIDING -> CRUISING
+[17:56:28] Planner: CRUISING -> AVOIDING
+[17:56:28] Planner: AVOIDING -> CRUISING
+[17:56:28] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:29] Planner: CRUISING -> AVOIDING
+[17:56:29] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:56:29] Planner: AVOIDING -> CRUISING
+[17:56:30] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:31] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:32] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:33] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:34] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:35] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:36] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:37] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:38] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:39] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:40] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:41] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:42] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:43] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:44] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:45] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:46] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:47] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:48] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:49] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:50] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:51] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:52] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:53] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:54] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:55] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:56] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:57] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:58] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:56:59] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:00] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:01] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:02] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:03] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:04] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:05] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:06] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:07] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:08] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:09] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:10] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:11] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:11] Planner: CRUISING -> AVOIDING
+[17:57:12] Planner: AVOIDING -> CRUISING
+[17:57:12] Planner: CRUISING -> AVOIDING
+[17:57:12] Planner: AVOIDING -> CRUISING
+[17:57:12] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:12] Planner: CRUISING -> AVOIDING
+[17:57:13] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:14] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:15] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:16] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:16] Planner: AVOIDING -> CRUISING
+[17:57:16] Planner: CRUISING -> AVOIDING
+[17:57:17] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:17] Planner: AVOIDING -> CRUISING
+[17:57:17] Planner: CRUISING -> AVOIDING
+[17:57:18] Planner: AVOIDING -> CRUISING
+[17:57:18] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:18] Planner: CRUISING -> AVOIDING
+[17:57:18] Planner: AVOIDING -> CRUISING
+[17:57:19] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:20] Planner: CRUISING -> AVOIDING
+[17:57:20] Planner: AVOIDING -> CRUISING
+[17:57:20] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:21] Planner: CRUISING -> AVOIDING
+[17:57:21] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:22] Planner: AVOIDING -> CRUISING
+[17:57:22] Planner: CRUISING -> AVOIDING
+[17:57:22] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:23] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:24] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:24] Planner: AVOIDING -> CRUISING
+[17:57:25] Planner: CRUISING -> AVOIDING
+[17:57:25] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:25] Planner: AVOIDING -> CRUISING
+[17:57:25] Planner: CRUISING -> AVOIDING
+[17:57:25] Planner: AVOIDING -> CRUISING
+[17:57:25] Planner: CRUISING -> AVOIDING
+[17:57:26] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:26] Planner: AVOIDING -> CRUISING
+[17:57:27] Planner: CRUISING -> AVOIDING
+[17:57:27] Planner: AVOIDING -> CRUISING
+[17:57:27] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:27] Planner: CRUISING -> AVOIDING
+[17:57:28] Planner: AVOIDING -> CRUISING
+[17:57:28] Planner: CRUISING -> AVOIDING
+[17:57:28] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:28] Planner: AVOIDING -> CRUISING
+[17:57:28] Planner: CRUISING -> AVOIDING
+[17:57:28] Planner: AVOIDING -> CRUISING
+[17:57:29] Planner: CRUISING -> AVOIDING
+[17:57:29] Planner: AVOIDING -> CRUISING
+[17:57:29] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:29] Planner: CRUISING -> AVOIDING
+[17:57:29] Planner: AVOIDING -> CRUISING
+[17:57:29] Planner: CRUISING -> AVOIDING
+[17:57:30] Planner: AVOIDING -> CRUISING
+[17:57:30] Planner: CRUISING -> AVOIDING
+[17:57:30] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:31] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:32] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:32] Planner: AVOIDING -> CRUISING
+[17:57:32] Planner: CRUISING -> AVOIDING
+[17:57:33] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:34] Planner: AVOIDING -> CRUISING
+[17:57:34] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:34] Planner: CRUISING -> AVOIDING
+[17:57:34] Planner: AVOIDING -> CRUISING
+[17:57:34] Planner: CRUISING -> AVOIDING
+[17:57:35] Planner: AVOIDING -> CRUISING
+[17:57:35] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:35] Planner: CRUISING -> AVOIDING
+[17:57:36] Planner: AVOIDING -> CRUISING
+[17:57:36] Planner: CRUISING -> AVOIDING
+[17:57:36] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:36] Planner: AVOIDING -> CRUISING
+[17:57:36] Planner: CRUISING -> AVOIDING
+[17:57:37] Planner: AVOIDING -> CRUISING
+[17:57:37] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:37] Planner: CRUISING -> AVOIDING
+[17:57:37] Planner: AVOIDING -> CRUISING
+[17:57:38] Planner: CRUISING -> AVOIDING
+[17:57:38] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:38] Planner: AVOIDING -> CRUISING
+[17:57:39] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:57:40] Planner: CRUISING -> AVOIDING
+[17:57:40] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:41] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:42] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:43] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:44] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:45] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:46] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:47] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:48] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:49] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:50] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:51] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:52] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:53] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:54] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:55] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:56] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:57] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:58] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:59] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:57:59] Planner: AVOIDING -> CRUISING
+[17:58:00] Planner: CRUISING -> AVOIDING
+[17:58:00] Planner: AVOIDING -> CRUISING
+[17:58:00] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:00] Planner: CRUISING -> AVOIDING
+[17:58:00] Planner: AVOIDING -> CRUISING
+[17:58:00] Planner: CRUISING -> AVOIDING
+[17:58:01] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:02] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:03] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:04] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:05] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:06] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:07] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:08] Planner: AVOIDING -> CRUISING
+[17:58:08] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:09] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:10] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:11] Planner: CRUISING -> AVOIDING
+[17:58:11] Planner: AVOIDING -> CRUISING
+[17:58:11] Planner: CRUISING -> AVOIDING
+[17:58:11] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:12] Planner: AVOIDING -> CRUISING
+[17:58:12] Planner: CRUISING -> AVOIDING
+[17:58:12] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:12] Planner: AVOIDING -> CRUISING
+[17:58:12] Planner: CRUISING -> AVOIDING
+[17:58:13] Planner: AVOIDING -> CRUISING
+[17:58:13] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:14] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:15] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:16] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:16] Planner: CRUISING -> AVOIDING
+[17:58:17] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:17] Planner: AVOIDING -> CRUISING
+[17:58:18] Planner: CRUISING -> AVOIDING
+[17:58:18] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:19] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:19] Planner: AVOIDING -> CRUISING
+[17:58:20] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:21] Planner: CRUISING -> AVOIDING
+[17:58:21] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:21] Planner: AVOIDING -> CRUISING
+[17:58:22] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:23] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:24] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:25] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:26] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:26] Planner: CRUISING -> AVOIDING
+[17:58:27] Planner: AVOIDING -> CRUISING
+[17:58:27] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:27] Planner: CRUISING -> AVOIDING
+[17:58:28] Planner: AVOIDING -> CRUISING
+[17:58:28] Planner: CRUISING -> AVOIDING
+[17:58:28] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:28] Planner: AVOIDING -> CRUISING
+[17:58:28] Planner: CRUISING -> AVOIDING
+[17:58:29] Planner: AVOIDING -> CRUISING
+[17:58:29] Planner: CRUISING -> AVOIDING
+[17:58:29] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:29] Planner: AVOIDING -> CRUISING
+[17:58:30] Planner: CRUISING -> AVOIDING
+[17:58:30] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:31] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:32] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:32] Planner: AVOIDING -> CRUISING
+[17:58:32] Planner: CRUISING -> AVOIDING
+[17:58:33] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:34] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:35] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:36] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:37] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:38] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:39] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:40] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:41] Planner: AVOIDING -> CRUISING
+[17:58:41] Planner: CRUISING -> AVOIDING
+[17:58:41] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:41] Planner: AVOIDING -> CRUISING
+[17:58:42] Planner: CRUISING -> AVOIDING
+[17:58:42] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:42] Planner: AVOIDING -> CRUISING
+[17:58:43] Planner: CRUISING -> AVOIDING
+[17:58:43] Planner: AVOIDING -> CRUISING
+[17:58:43] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:43] Planner: CRUISING -> AVOIDING
+[17:58:44] Planner: AVOIDING -> CRUISING
+[17:58:44] Planner: CRUISING -> AVOIDING
+[17:58:44] Planner: AVOIDING -> CRUISING
+[17:58:44] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:44] Planner: CRUISING -> AVOIDING
+[17:58:45] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:45] Planner: AVOIDING -> CRUISING
+[17:58:45] Planner: CRUISING -> AVOIDING
+[17:58:45] Planner: AVOIDING -> CRUISING
+[17:58:45] Planner: CRUISING -> AVOIDING
+[17:58:46] Planner: AVOIDING -> CRUISING
+[17:58:46] Planner: CRUISING -> AVOIDING
+[17:58:46] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:47] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:48] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=AVOIDING
+[17:58:48] Planner: AVOIDING -> CRUISING
+[17:58:49] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:50] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:51] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING
+[17:58:52] STATUS  fsm=NO_FIX              mode=STABILIZE  armed=N  alt=—        gs=—m/s  sats=—  batt=—  planner=CRUISING

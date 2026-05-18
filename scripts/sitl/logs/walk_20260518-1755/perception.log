@@ -1,0 +1,86 @@
+qt.qpa.plugin: Could not find the Qt platform plugin "wayland" in "/home/snpi/Documents/AutonoBird/scripts/perception/venv/lib/python3.11/site-packages/cv2/qt/plugins"
+============================================================
+HANDHELD PERCEPTION: STEREO DEPTH + YOLO ON HAILO-8
+============================================================
+[INFO] Calibration loaded: /home/snpi/Documents/AutonoBird/scripts/ar0144/stereo_calibration_data/stereo_calibration.npz
+[INFO] Calibration RMS reprojection error: 1.1019 px
+[INFO] Baseline: 51.92 mm
+[INFO] HEF loaded: /home/snpi/Documents/AutonoBird/scripts/perception/models/model.hef
+[INFO] Input  'yolov8n/input_layer1' shape (640, 640, 3)
+[INFO] Output 'yolov8n/yolov8_nms_postprocess' shape (80, 5, 100)
+[INFO] Emitting JSONL detection events to /home/snpi/Documents/AutonoBird/scripts/sitl/logs/walk_20260518-1755/perception.jsonl
+Press Q to quit (GUI mode) or Ctrl+C (any mode).
+
+[INFO] Detection layout: Hailo NMS list, 80 classes
+  [heartbeat] fps=7.2 npu=22.4ms sgbm=81.3ms loop=346.0ms det=0
+  [heartbeat] fps=6.5 npu=19.5ms sgbm=78.6ms loop=165.0ms det=0
+  [heartbeat] fps=6.8 npu=20.8ms sgbm=77.4ms loop=142.0ms det=0
+  [heartbeat] fps=7.0 npu=18.7ms sgbm=76.3ms loop=135.1ms det=0
+  [heartbeat] fps=6.8 npu=19.1ms sgbm=76.7ms loop=137.7ms det=0
+  [heartbeat] fps=7.0 npu=18.7ms sgbm=76.5ms loop=135.4ms det=0
+  [heartbeat] fps=6.9 npu=18.5ms sgbm=76.1ms loop=136.6ms det=0
+  [heartbeat] fps=7.0 npu=18.5ms sgbm=76.0ms loop=136.2ms det=0
+  [heartbeat] fps=6.9 npu=18.5ms sgbm=76.3ms loop=135.4ms det=0
+  [heartbeat] fps=6.6 npu=18.6ms sgbm=75.7ms loop=137.6ms det=2
+  [heartbeat] fps=6.6 npu=18.9ms sgbm=75.4ms loop=139.9ms det=7
+  [heartbeat] fps=6.4 npu=18.6ms sgbm=75.9ms loop=140.9ms det=5
+  [heartbeat] fps=6.9 npu=18.8ms sgbm=75.2ms loop=137.6ms det=4
+  [heartbeat] fps=5.4 npu=18.5ms sgbm=76.5ms loop=139.2ms det=3
+  [heartbeat] fps=6.6 npu=18.5ms sgbm=76.8ms loop=139.8ms det=0
+  [heartbeat] fps=6.5 npu=19.5ms sgbm=77.4ms loop=140.5ms det=2
+  [heartbeat] fps=7.3 npu=18.7ms sgbm=75.9ms loop=135.7ms det=3
+  [heartbeat] fps=6.5 npu=19.1ms sgbm=76.1ms loop=138.6ms det=4
+  [heartbeat] fps=6.5 npu=18.8ms sgbm=76.7ms loop=141.0ms det=3
+  [heartbeat] fps=6.9 npu=18.7ms sgbm=74.6ms loop=136.0ms det=0
+  [heartbeat] fps=7.3 npu=18.7ms sgbm=74.4ms loop=131.9ms det=0
+  [heartbeat] fps=6.6 npu=18.8ms sgbm=75.6ms loop=137.8ms det=2
+  [heartbeat] fps=6.4 npu=19.3ms sgbm=76.3ms loop=141.6ms det=4
+  [heartbeat] fps=7.0 npu=18.6ms sgbm=76.1ms loop=134.6ms det=0
+  [heartbeat] fps=7.0 npu=18.7ms sgbm=74.9ms loop=134.4ms det=0
+  [heartbeat] fps=6.6 npu=18.8ms sgbm=75.1ms loop=136.2ms det=0
+  [heartbeat] fps=6.7 npu=19.0ms sgbm=75.8ms loop=138.2ms det=0
+  [heartbeat] fps=6.5 npu=19.1ms sgbm=76.1ms loop=139.9ms det=0
+  [heartbeat] fps=6.5 npu=18.8ms sgbm=76.8ms loop=139.7ms det=0
+  [heartbeat] fps=6.7 npu=18.5ms sgbm=76.1ms loop=139.7ms det=0
+  [heartbeat] fps=6.7 npu=18.9ms sgbm=75.1ms loop=137.7ms det=0
+  [heartbeat] fps=6.8 npu=18.5ms sgbm=75.4ms loop=136.8ms det=0
+  [heartbeat] fps=7.1 npu=18.5ms sgbm=74.9ms loop=133.9ms det=0
+  [heartbeat] fps=6.6 npu=19.1ms sgbm=75.6ms loop=137.7ms det=0
+  [heartbeat] fps=6.6 npu=18.7ms sgbm=76.2ms loop=139.6ms det=0
+  [heartbeat] fps=6.7 npu=18.9ms sgbm=75.1ms loop=137.9ms det=0
+  [heartbeat] fps=6.8 npu=18.7ms sgbm=75.8ms loop=137.6ms det=0
+  [heartbeat] fps=7.1 npu=18.5ms sgbm=74.7ms loop=130.7ms det=0
+  [heartbeat] fps=7.0 npu=18.6ms sgbm=74.9ms loop=131.7ms det=1
+  [heartbeat] fps=6.6 npu=18.5ms sgbm=77.9ms loop=137.9ms det=1
+  [heartbeat] fps=6.8 npu=18.8ms sgbm=76.5ms loop=137.5ms det=2
+  [heartbeat] fps=6.6 npu=18.6ms sgbm=75.8ms loop=136.8ms det=0
+  [heartbeat] fps=6.9 npu=18.7ms sgbm=74.8ms loop=136.9ms det=2
+  [heartbeat] fps=6.6 npu=18.7ms sgbm=76.0ms loop=139.3ms det=3
+  [heartbeat] fps=6.7 npu=18.6ms sgbm=75.2ms loop=138.5ms det=3
+  [heartbeat] fps=6.5 npu=19.0ms sgbm=77.1ms loop=141.0ms det=2
+  [heartbeat] fps=6.9 npu=18.8ms sgbm=74.9ms loop=136.6ms det=2
+  [heartbeat] fps=7.1 npu=18.5ms sgbm=74.6ms loop=134.3ms det=0
+  [heartbeat] fps=6.7 npu=19.1ms sgbm=75.3ms loop=137.4ms det=2
+  [heartbeat] fps=6.6 npu=19.0ms sgbm=76.1ms loop=139.6ms det=3
+  [heartbeat] fps=7.0 npu=18.7ms sgbm=75.5ms loop=137.3ms det=3
+  [heartbeat] fps=7.0 npu=18.5ms sgbm=75.6ms loop=135.5ms det=3
+  [heartbeat] fps=6.5 npu=18.4ms sgbm=75.8ms loop=138.3ms det=3
+  [heartbeat] fps=6.7 npu=19.0ms sgbm=75.7ms loop=136.7ms det=3
+  [heartbeat] fps=6.8 npu=18.8ms sgbm=75.7ms loop=137.5ms det=3
+  [heartbeat] fps=6.9 npu=18.9ms sgbm=75.3ms loop=137.3ms det=3
+  [heartbeat] fps=6.7 npu=18.5ms sgbm=75.3ms loop=137.3ms det=1
+  [heartbeat] fps=7.0 npu=18.7ms sgbm=75.4ms loop=136.0ms det=1
+  [heartbeat] fps=6.9 npu=18.8ms sgbm=75.9ms loop=137.8ms det=2
+  [heartbeat] fps=6.6 npu=18.6ms sgbm=75.6ms loop=136.3ms det=1
+  [heartbeat] fps=7.0 npu=20.0ms sgbm=75.4ms loop=136.8ms det=1
+  [heartbeat] fps=6.7 npu=18.9ms sgbm=75.2ms loop=137.9ms det=0
+  [heartbeat] fps=6.7 npu=18.9ms sgbm=75.1ms loop=137.8ms det=0
+  [heartbeat] fps=6.6 npu=18.7ms sgbm=75.3ms loop=136.0ms det=2
+  [heartbeat] fps=6.5 npu=18.8ms sgbm=76.2ms loop=139.1ms det=3
+  [heartbeat] fps=6.7 npu=18.9ms sgbm=75.8ms loop=138.1ms det=3
+  [heartbeat] fps=6.9 npu=18.6ms sgbm=75.3ms loop=136.9ms det=3
+  [heartbeat] fps=6.3 npu=18.5ms sgbm=77.9ms loop=142.3ms det=2
+  [heartbeat] fps=6.7 npu=18.8ms sgbm=78.0ms loop=140.4ms det=1
+  [heartbeat] fps=6.7 npu=18.7ms sgbm=76.1ms loop=139.3ms det=2
+
+Done. Final EMA — NPU: 18.7 ms, SGBM: 75.8 ms, loop: 138.1 ms.
