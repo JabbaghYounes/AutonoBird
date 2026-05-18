@@ -1,0 +1,45 @@
+{
+  "test": "T6_mission_replicate",
+  "timestamp": "20260516-201821",
+  "summary": {
+    "mission_path": "/home/vt/Documents/AutonoBird/scripts/sitl/missions/box_50m.txt",
+    "n_runs": 1,
+    "target_n_m": 50.03771699013234,
+    "target_e_m": 50.055284869243614,
+    "target_alt_m": 10.0,
+    "tolerance_pct": 5.0,
+    "n_extent_mean": 51.11630777854768,
+    "n_extent_std": 0.0,
+    "e_extent_mean": 51.224769590459715,
+    "e_extent_std": 0.0,
+    "alt_mean": 10.027,
+    "alt_std": 0.0,
+    "duration_mean": 68.75630807876587,
+    "pass_rate": 100.0,
+    "all_pass": true
+  },
+  "runs": [
+    {
+      "run_index": 1,
+      "duration_s": 68.75630807876587,
+      "items_reached": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "n_extent_m": 51.11630777854768,
+      "e_extent_m": 51.224769590459715,
+      "peak_alt_m": 10.027,
+      "ref_lat": -35.363262,
+      "ref_lon": 149.1652373,
+      "n_extent_err_pct": 2.155555555478367,
+      "e_extent_err_pct": 2.336386106424276,
+      "alt_err_pct": 0.26999999999999247,
+      "completed_mission": true,
+      "pass_extents": true
+    }
+  ]
+}

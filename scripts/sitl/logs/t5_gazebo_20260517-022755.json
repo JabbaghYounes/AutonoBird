@@ -1,0 +1,1303 @@
+{
+  "test": "T5_gazebo_closed_loop_avoidance",
+  "timestamp": "20260517-022755",
+  "summary": {
+    "obstacle_n_m": 12.0,
+    "obstacle_e_m": 0.0,
+    "obstacle_radius_m": 0.5,
+    "min_clearance_bound_m": 0.3,
+    "target_north_m": 14.0,
+    "duration_s": 35.0,
+    "mode_changes": [
+      [
+        3.814697265625e-05,
+        "IDLE",
+        "CRUISING"
+      ],
+      [
+        35.01795959472656,
+        "CRUISING",
+        "IDLE"
+      ]
+    ],
+    "fsm_transitions": [
+      [
+        1778981182.9447272,
+        "NO_FIX"
+      ],
+      [
+        1778981184.5523448,
+        "PREARMED"
+      ],
+      [
+        1778981189.4850922,
+        "ARMED_ON_GROUND"
+      ],
+      [
+        1778981210.8393347,
+        "ASCENDING"
+      ],
+      [
+        1778981226.2533722,
+        "AIRBORNE"
+      ],
+      [
+        1778981261.3036535,
+        "DESCENDING"
+      ],
+      [
+        1778981265.1713254,
+        "ARMED_ON_GROUND"
+      ],
+      [
+        1778981275.3014958,
+        "FAULT"
+      ]
+    ],
+    "min_clearance_m": 0.2137149456292704,
+    "max_north_reached_m": 11.28628505437073,
+    "max_east_reached_m": 0.0,
+    "planner_visited_cruising": true,
+    "planner_visited_avoiding": false,
+    "completed_disarm": true,
+    "pass_clearance": false,
+    "pass_passed_obstacle": false,
+    "pass_planner_states": false,
+    "pass_disarmed": true
+  },
+  "samples": [
+    {
+      "t_offset": 0.002714872360229492,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 0.25565552711486816,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.06,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 0.5374958515167236,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.06,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 0.8078618049621582,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.06,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 1.0614097118377686,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.06,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 1.3142452239990234,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.06,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 1.567598581314087,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 1.8192944526672363,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 2.070230722427368,
+      "planner_mode": "CRUISING",
+      "north_m": 0.0,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 12.0,
+      "clearance_m": 11.5
+    },
+    {
+      "t_offset": 2.330644369125366,
+      "planner_mode": "CRUISING",
+      "north_m": 0.04447797038750992,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 11.95552202961249,
+      "clearance_m": 11.45552202961249
+    },
+    {
+      "t_offset": 2.583512783050537,
+      "planner_mode": "CRUISING",
+      "north_m": 0.04447797038750992,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 11.95552202961249,
+      "clearance_m": 11.45552202961249
+    },
+    {
+      "t_offset": 2.836566925048828,
+      "planner_mode": "CRUISING",
+      "north_m": 0.04447797038750992,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 11.95552202961249,
+      "clearance_m": 11.45552202961249
+    },
+    {
+      "t_offset": 3.091247081756592,
+      "planner_mode": "CRUISING",
+      "north_m": 0.17791188234012714,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.822088117659872,
+      "clearance_m": 11.322088117659872
+    },
+    {
+      "t_offset": 3.3462135791778564,
+      "planner_mode": "CRUISING",
+      "north_m": 0.17791188234012714,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.822088117659872,
+      "clearance_m": 11.322088117659872
+    },
+    {
+      "t_offset": 3.6017885208129883,
+      "planner_mode": "CRUISING",
+      "north_m": 0.17791188234012714,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.822088117659872,
+      "clearance_m": 11.322088117659872
+    },
+    {
+      "t_offset": 3.85341215133667,
+      "planner_mode": "CRUISING",
+      "north_m": 0.17791188234012714,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.822088117659872,
+      "clearance_m": 11.322088117659872
+    },
+    {
+      "t_offset": 4.109508275985718,
+      "planner_mode": "CRUISING",
+      "north_m": 0.17791188234012714,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.822088117659872,
+      "clearance_m": 11.322088117659872
+    },
+    {
+      "t_offset": 4.362099647521973,
+      "planner_mode": "CRUISING",
+      "north_m": 0.4336602142410497,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.56633978575895,
+      "clearance_m": 11.06633978575895
+    },
+    {
+      "t_offset": 4.61463737487793,
+      "planner_mode": "CRUISING",
+      "north_m": 0.4336602142410497,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.56633978575895,
+      "clearance_m": 11.06633978575895
+    },
+    {
+      "t_offset": 4.867566823959351,
+      "planner_mode": "CRUISING",
+      "north_m": 0.4336602142410497,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.56633978575895,
+      "clearance_m": 11.06633978575895
+    },
+    {
+      "t_offset": 5.137423992156982,
+      "planner_mode": "CRUISING",
+      "north_m": 0.4336602142410497,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.56633978575895,
+      "clearance_m": 11.06633978575895
+    },
+    {
+      "t_offset": 5.39014458656311,
+      "planner_mode": "CRUISING",
+      "north_m": 0.8006034717157033,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.199396528284296,
+      "clearance_m": 10.699396528284296
+    },
+    {
+      "t_offset": 5.650308132171631,
+      "planner_mode": "CRUISING",
+      "north_m": 0.8006034717157033,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.199396528284296,
+      "clearance_m": 10.699396528284296
+    },
+    {
+      "t_offset": 5.905773401260376,
+      "planner_mode": "CRUISING",
+      "north_m": 0.8006034717157033,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.199396528284296,
+      "clearance_m": 10.699396528284296
+    },
+    {
+      "t_offset": 6.160234451293945,
+      "planner_mode": "CRUISING",
+      "north_m": 0.8006034717157033,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.199396528284296,
+      "clearance_m": 10.699396528284296
+    },
+    {
+      "t_offset": 6.411499500274658,
+      "planner_mode": "CRUISING",
+      "north_m": 0.8006034717157033,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 11.199396528284296,
+      "clearance_m": 10.699396528284296
+    },
+    {
+      "t_offset": 6.68449854850769,
+      "planner_mode": "CRUISING",
+      "north_m": 1.2009052075735551,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.799094792426445,
+      "clearance_m": 10.299094792426445
+    },
+    {
+      "t_offset": 6.938817262649536,
+      "planner_mode": "CRUISING",
+      "north_m": 1.2009052075735551,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.799094792426445,
+      "clearance_m": 10.299094792426445
+    },
+    {
+      "t_offset": 7.195281982421875,
+      "planner_mode": "CRUISING",
+      "north_m": 1.2009052075735551,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.799094792426445,
+      "clearance_m": 10.299094792426445
+    },
+    {
+      "t_offset": 7.450488805770874,
+      "planner_mode": "CRUISING",
+      "north_m": 1.6012069434314067,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.398793056568593,
+      "clearance_m": 9.898793056568593
+    },
+    {
+      "t_offset": 7.70865273475647,
+      "planner_mode": "CRUISING",
+      "north_m": 1.6012069434314067,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.398793056568593,
+      "clearance_m": 9.898793056568593
+    },
+    {
+      "t_offset": 7.962515115737915,
+      "planner_mode": "CRUISING",
+      "north_m": 1.6012069434314067,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.398793056568593,
+      "clearance_m": 9.898793056568593
+    },
+    {
+      "t_offset": 8.2191743850708,
+      "planner_mode": "CRUISING",
+      "north_m": 1.6012069434314067,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.398793056568593,
+      "clearance_m": 9.898793056568593
+    },
+    {
+      "t_offset": 8.472804546356201,
+      "planner_mode": "CRUISING",
+      "north_m": 1.6012069434314067,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.398793056568593,
+      "clearance_m": 9.898793056568593
+    },
+    {
+      "t_offset": 8.72967791557312,
+      "planner_mode": "CRUISING",
+      "north_m": 1.9681502016961476,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.031849798303853,
+      "clearance_m": 9.531849798303853
+    },
+    {
+      "t_offset": 8.993599653244019,
+      "planner_mode": "CRUISING",
+      "north_m": 1.9681502016961476,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.031849798303853,
+      "clearance_m": 9.531849798303853
+    },
+    {
+      "t_offset": 9.247529029846191,
+      "planner_mode": "CRUISING",
+      "north_m": 1.9681502016961476,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.031849798303853,
+      "clearance_m": 9.531849798303853
+    },
+    {
+      "t_offset": 9.501641273498535,
+      "planner_mode": "CRUISING",
+      "north_m": 1.9681502016961476,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 10.031849798303853,
+      "clearance_m": 9.531849798303853
+    },
+    {
+      "t_offset": 9.753312349319458,
+      "planner_mode": "CRUISING",
+      "north_m": 2.346212951965201,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.653787048034799,
+      "clearance_m": 9.153787048034799
+    },
+    {
+      "t_offset": 10.005260705947876,
+      "planner_mode": "CRUISING",
+      "north_m": 2.346212951965201,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.653787048034799,
+      "clearance_m": 9.153787048034799
+    },
+    {
+      "t_offset": 10.27551531791687,
+      "planner_mode": "CRUISING",
+      "north_m": 2.346212951965201,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.653787048034799,
+      "clearance_m": 9.153787048034799
+    },
+    {
+      "t_offset": 10.537846088409424,
+      "planner_mode": "CRUISING",
+      "north_m": 2.346212951965201,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.653787048034799,
+      "clearance_m": 9.153787048034799
+    },
+    {
+      "t_offset": 10.790468692779541,
+      "planner_mode": "CRUISING",
+      "north_m": 2.7020367174355426,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.297963282564456,
+      "clearance_m": 8.797963282564456
+    },
+    {
+      "t_offset": 11.045493364334106,
+      "planner_mode": "CRUISING",
+      "north_m": 2.7020367174355426,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.297963282564456,
+      "clearance_m": 8.797963282564456
+    },
+    {
+      "t_offset": 11.304267168045044,
+      "planner_mode": "CRUISING",
+      "north_m": 2.7020367174355426,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.297963282564456,
+      "clearance_m": 8.797963282564456
+    },
+    {
+      "t_offset": 11.555781602859497,
+      "planner_mode": "CRUISING",
+      "north_m": 2.7020367174355426,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 9.297963282564456,
+      "clearance_m": 8.797963282564456
+    },
+    {
+      "t_offset": 11.80999231338501,
+      "planner_mode": "CRUISING",
+      "north_m": 3.046740990111485,
+      "east_m": 0.0,
+      "alt_rel_m": 5.05,
+      "distance_to_obstacle_m": 8.953259009888516,
+      "clearance_m": 8.453259009888516
+    },
+    {
+      "t_offset": 12.067238807678223,
+      "planner_mode": "CRUISING",
+      "north_m": 3.046740990111485,
+      "east_m": 0.0,
+      "alt_rel_m": 5.05,
+      "distance_to_obstacle_m": 8.953259009888516,
+      "clearance_m": 8.453259009888516
+    },
+    {
+      "t_offset": 12.32049298286438,
+      "planner_mode": "CRUISING",
+      "north_m": 3.046740990111485,
+      "east_m": 0.0,
+      "alt_rel_m": 5.05,
+      "distance_to_obstacle_m": 8.953259009888516,
+      "clearance_m": 8.453259009888516
+    },
+    {
+      "t_offset": 12.593497037887573,
+      "planner_mode": "CRUISING",
+      "north_m": 3.046740990111485,
+      "east_m": 0.0,
+      "alt_rel_m": 5.05,
+      "distance_to_obstacle_m": 8.953259009888516,
+      "clearance_m": 8.453259009888516
+    },
+    {
+      "t_offset": 12.84948992729187,
+      "planner_mode": "CRUISING",
+      "north_m": 3.3914452627874274,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.608554737212572,
+      "clearance_m": 8.108554737212572
+    },
+    {
+      "t_offset": 13.107796430587769,
+      "planner_mode": "CRUISING",
+      "north_m": 3.3914452627874274,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.608554737212572,
+      "clearance_m": 8.108554737212572
+    },
+    {
+      "t_offset": 13.371882915496826,
+      "planner_mode": "CRUISING",
+      "north_m": 3.3914452627874274,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.608554737212572,
+      "clearance_m": 8.108554737212572
+    },
+    {
+      "t_offset": 13.62450385093689,
+      "planner_mode": "CRUISING",
+      "north_m": 3.3914452627874274,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.608554737212572,
+      "clearance_m": 8.108554737212572
+    },
+    {
+      "t_offset": 13.883816003799438,
+      "planner_mode": "CRUISING",
+      "north_m": 3.3914452627874274,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.608554737212572,
+      "clearance_m": 8.108554737212572
+    },
+    {
+      "t_offset": 14.138214349746704,
+      "planner_mode": "CRUISING",
+      "north_m": 3.758388520262081,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.24161147973792,
+      "clearance_m": 7.741611479737919
+    },
+    {
+      "t_offset": 14.393642902374268,
+      "planner_mode": "CRUISING",
+      "north_m": 3.758388520262081,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.24161147973792,
+      "clearance_m": 7.741611479737919
+    },
+    {
+      "t_offset": 14.647196531295776,
+      "planner_mode": "CRUISING",
+      "north_m": 3.758388520262081,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.24161147973792,
+      "clearance_m": 7.741611479737919
+    },
+    {
+      "t_offset": 14.899516582489014,
+      "planner_mode": "CRUISING",
+      "north_m": 3.758388520262081,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 8.24161147973792,
+      "clearance_m": 7.741611479737919
+    },
+    {
+      "t_offset": 15.155251502990723,
+      "planner_mode": "CRUISING",
+      "north_m": 4.114212285732423,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.885792927914351,
+      "clearance_m": 7.385792927914351
+    },
+    {
+      "t_offset": 15.413513660430908,
+      "planner_mode": "CRUISING",
+      "north_m": 4.114212285732423,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.885792927914351,
+      "clearance_m": 7.385792927914351
+    },
+    {
+      "t_offset": 15.667557716369629,
+      "planner_mode": "CRUISING",
+      "north_m": 4.114212285732423,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.885792927914351,
+      "clearance_m": 7.385792927914351
+    },
+    {
+      "t_offset": 15.923095941543579,
+      "planner_mode": "CRUISING",
+      "north_m": 4.114212285732423,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.885792927914351,
+      "clearance_m": 7.385792927914351
+    },
+    {
+      "t_offset": 16.176515817642212,
+      "planner_mode": "CRUISING",
+      "north_m": 4.114212285732423,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.885792927914351,
+      "clearance_m": 7.385792927914351
+    },
+    {
+      "t_offset": 16.438122749328613,
+      "planner_mode": "CRUISING",
+      "north_m": 4.458916558408365,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.541088893554966,
+      "clearance_m": 7.041088893554966
+    },
+    {
+      "t_offset": 16.69670295715332,
+      "planner_mode": "CRUISING",
+      "north_m": 4.458916558408365,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.541088893554966,
+      "clearance_m": 7.041088893554966
+    },
+    {
+      "t_offset": 16.95006561279297,
+      "planner_mode": "CRUISING",
+      "north_m": 4.458916558408365,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.541088893554966,
+      "clearance_m": 7.041088893554966
+    },
+    {
+      "t_offset": 17.217159509658813,
+      "planner_mode": "CRUISING",
+      "north_m": 4.825859816673106,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.174145914147283,
+      "clearance_m": 6.674145914147283
+    },
+    {
+      "t_offset": 17.470895528793335,
+      "planner_mode": "CRUISING",
+      "north_m": 4.825859816673106,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.174145914147283,
+      "clearance_m": 6.674145914147283
+    },
+    {
+      "t_offset": 17.731086254119873,
+      "planner_mode": "CRUISING",
+      "north_m": 4.825859816673106,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.174145914147283,
+      "clearance_m": 6.674145914147283
+    },
+    {
+      "t_offset": 17.98948907852173,
+      "planner_mode": "CRUISING",
+      "north_m": 4.825859816673106,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 7.174145914147283,
+      "clearance_m": 6.674145914147283
+    },
+    {
+      "t_offset": 18.24625325202942,
+      "planner_mode": "CRUISING",
+      "north_m": 5.19280307414776,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 6.807202965593336,
+      "clearance_m": 6.307202965593336
+    },
+    {
+      "t_offset": 18.501388788223267,
+      "planner_mode": "CRUISING",
+      "north_m": 5.19280307414776,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 6.807202965593336,
+      "clearance_m": 6.307202965593336
+    },
+    {
+      "t_offset": 18.759508848190308,
+      "planner_mode": "CRUISING",
+      "north_m": 5.19280307414776,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 6.807202965593336,
+      "clearance_m": 6.307202965593336
+    },
+    {
+      "t_offset": 19.016752243041992,
+      "planner_mode": "CRUISING",
+      "north_m": 5.19280307414776,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 6.807202965593336,
+      "clearance_m": 6.307202965593336
+    },
+    {
+      "t_offset": 19.2684326171875,
+      "planner_mode": "CRUISING",
+      "north_m": 5.5708658252069005,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.429140569698494,
+      "clearance_m": 5.929140569698494
+    },
+    {
+      "t_offset": 19.520215034484863,
+      "planner_mode": "CRUISING",
+      "north_m": 5.5708658252069005,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.429140569698494,
+      "clearance_m": 5.929140569698494
+    },
+    {
+      "t_offset": 19.773842334747314,
+      "planner_mode": "CRUISING",
+      "north_m": 5.5708658252069005,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.429140569698494,
+      "clearance_m": 5.929140569698494
+    },
+    {
+      "t_offset": 20.02652907371521,
+      "planner_mode": "CRUISING",
+      "north_m": 5.5708658252069005,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.429140569698494,
+      "clearance_m": 5.929140569698494
+    },
+    {
+      "t_offset": 20.278104543685913,
+      "planner_mode": "CRUISING",
+      "north_m": 5.9489285754759536,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.051078218974037,
+      "clearance_m": 5.551078218974037
+    },
+    {
+      "t_offset": 20.532251596450806,
+      "planner_mode": "CRUISING",
+      "north_m": 5.9489285754759536,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.051078218974037,
+      "clearance_m": 5.551078218974037
+    },
+    {
+      "t_offset": 20.78376603126526,
+      "planner_mode": "CRUISING",
+      "north_m": 5.9489285754759536,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 6.051078218974037,
+      "clearance_m": 5.551078218974037
+    },
+    {
+      "t_offset": 21.039435148239136,
+      "planner_mode": "CRUISING",
+      "north_m": 6.3381108185394055,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.6618964429412735,
+      "clearance_m": 5.1618964429412735
+    },
+    {
+      "t_offset": 21.29117226600647,
+      "planner_mode": "CRUISING",
+      "north_m": 6.3381108185394055,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.6618964429412735,
+      "clearance_m": 5.1618964429412735
+    },
+    {
+      "t_offset": 21.564575672149658,
+      "planner_mode": "CRUISING",
+      "north_m": 6.3381108185394055,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.6618964429412735,
+      "clearance_m": 5.1618964429412735
+    },
+    {
+      "t_offset": 21.81678318977356,
+      "planner_mode": "CRUISING",
+      "north_m": 6.3381108185394055,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.6618964429412735,
+      "clearance_m": 5.1618964429412735
+    },
+    {
+      "t_offset": 22.074546575546265,
+      "planner_mode": "CRUISING",
+      "north_m": 6.7161735695985465,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.283834211447166,
+      "clearance_m": 4.783834211447166
+    },
+    {
+      "t_offset": 22.343814849853516,
+      "planner_mode": "CRUISING",
+      "north_m": 6.7161735695985465,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.283834211447166,
+      "clearance_m": 4.783834211447166
+    },
+    {
+      "t_offset": 22.598971843719482,
+      "planner_mode": "CRUISING",
+      "north_m": 6.7161735695985465,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.283834211447166,
+      "clearance_m": 4.783834211447166
+    },
+    {
+      "t_offset": 22.853779792785645,
+      "planner_mode": "CRUISING",
+      "north_m": 6.7161735695985465,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 5.283834211447166,
+      "clearance_m": 4.783834211447166
+    },
+    {
+      "t_offset": 23.10741925239563,
+      "planner_mode": "CRUISING",
+      "north_m": 7.0942363198675995,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 4.905772060823527,
+      "clearance_m": 4.405772060823527
+    },
+    {
+      "t_offset": 23.36251425743103,
+      "planner_mode": "CRUISING",
+      "north_m": 7.0942363198675995,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 4.905772060823527,
+      "clearance_m": 4.405772060823527
+    },
+    {
+      "t_offset": 23.623807430267334,
+      "planner_mode": "CRUISING",
+      "north_m": 7.0942363198675995,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 4.905772060823527,
+      "clearance_m": 4.405772060823527
+    },
+    {
+      "t_offset": 23.882821321487427,
+      "planner_mode": "CRUISING",
+      "north_m": 7.0942363198675995,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 4.905772060823527,
+      "clearance_m": 4.405772060823527
+    },
+    {
+      "t_offset": 24.134812831878662,
+      "planner_mode": "CRUISING",
+      "north_m": 7.4834185629310515,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.516590539901347,
+      "clearance_m": 4.016590539901347
+    },
+    {
+      "t_offset": 24.3874249458313,
+      "planner_mode": "CRUISING",
+      "north_m": 7.4834185629310515,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.516590539901347,
+      "clearance_m": 4.016590539901347
+    },
+    {
+      "t_offset": 24.642260789871216,
+      "planner_mode": "CRUISING",
+      "north_m": 7.4834185629310515,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.516590539901347,
+      "clearance_m": 4.016590539901347
+    },
+    {
+      "t_offset": 24.895004272460938,
+      "planner_mode": "CRUISING",
+      "north_m": 7.4834185629310515,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.516590539901347,
+      "clearance_m": 4.016590539901347
+    },
+    {
+      "t_offset": 25.155323266983032,
+      "planner_mode": "CRUISING",
+      "north_m": 7.850361821195793,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.149638178804207,
+      "clearance_m": 3.6496381788042074
+    },
+    {
+      "t_offset": 25.419547080993652,
+      "planner_mode": "CRUISING",
+      "north_m": 7.850361821195793,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.149638178804207,
+      "clearance_m": 3.6496381788042074
+    },
+    {
+      "t_offset": 25.67150855064392,
+      "planner_mode": "CRUISING",
+      "north_m": 7.850361821195793,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.149638178804207,
+      "clearance_m": 3.6496381788042074
+    },
+    {
+      "t_offset": 25.924742221832275,
+      "planner_mode": "CRUISING",
+      "north_m": 7.850361821195793,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 4.149638178804207,
+      "clearance_m": 3.6496381788042074
+    },
+    {
+      "t_offset": 26.187512397766113,
+      "planner_mode": "CRUISING",
+      "north_m": 8.228424571464846,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.7715754285351544,
+      "clearance_m": 3.2715754285351544
+    },
+    {
+      "t_offset": 26.440529108047485,
+      "planner_mode": "CRUISING",
+      "north_m": 8.228424571464846,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.7715754285351544,
+      "clearance_m": 3.2715754285351544
+    },
+    {
+      "t_offset": 26.69282841682434,
+      "planner_mode": "CRUISING",
+      "north_m": 8.228424571464846,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.7715754285351544,
+      "clearance_m": 3.2715754285351544
+    },
+    {
+      "t_offset": 26.946499824523926,
+      "planner_mode": "CRUISING",
+      "north_m": 8.595367829729586,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 3.404632170270414,
+      "clearance_m": 2.904632170270414
+    },
+    {
+      "t_offset": 27.19804811477661,
+      "planner_mode": "CRUISING",
+      "north_m": 8.595367829729586,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 3.404632170270414,
+      "clearance_m": 2.904632170270414
+    },
+    {
+      "t_offset": 27.473023414611816,
+      "planner_mode": "CRUISING",
+      "north_m": 8.595367829729586,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 3.404632170270414,
+      "clearance_m": 2.904632170270414
+    },
+    {
+      "t_offset": 27.72871994972229,
+      "planner_mode": "CRUISING",
+      "north_m": 8.595367829729586,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 3.404632170270414,
+      "clearance_m": 2.904632170270414
+    },
+    {
+      "t_offset": 27.980570793151855,
+      "planner_mode": "CRUISING",
+      "north_m": 8.98455007279304,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.0154499272069604,
+      "clearance_m": 2.5154499272069604
+    },
+    {
+      "t_offset": 28.233792304992676,
+      "planner_mode": "CRUISING",
+      "north_m": 8.98455007279304,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.0154499272069604,
+      "clearance_m": 2.5154499272069604
+    },
+    {
+      "t_offset": 28.487534046173096,
+      "planner_mode": "CRUISING",
+      "north_m": 8.98455007279304,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 3.0154499272069604,
+      "clearance_m": 2.5154499272069604
+    },
+    {
+      "t_offset": 28.73920702934265,
+      "planner_mode": "CRUISING",
+      "north_m": 9.35149333105778,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 2.6485221922577775,
+      "clearance_m": 2.1485221922577775
+    },
+    {
+      "t_offset": 28.991619110107422,
+      "planner_mode": "CRUISING",
+      "north_m": 9.35149333105778,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 2.6485221922577775,
+      "clearance_m": 2.1485221922577775
+    },
+    {
+      "t_offset": 29.261191606521606,
+      "planner_mode": "CRUISING",
+      "north_m": 9.35149333105778,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 2.6485221922577775,
+      "clearance_m": 2.1485221922577775
+    },
+    {
+      "t_offset": 29.524277210235596,
+      "planner_mode": "CRUISING",
+      "north_m": 9.35149333105778,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 2.6485221922577775,
+      "clearance_m": 2.1485221922577775
+    },
+    {
+      "t_offset": 29.7764835357666,
+      "planner_mode": "CRUISING",
+      "north_m": 9.718436588532434,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 2.281581431375625,
+      "clearance_m": 1.781581431375625
+    },
+    {
+      "t_offset": 30.029289484024048,
+      "planner_mode": "CRUISING",
+      "north_m": 9.718436588532434,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 2.281581431375625,
+      "clearance_m": 1.781581431375625
+    },
+    {
+      "t_offset": 30.281855583190918,
+      "planner_mode": "CRUISING",
+      "north_m": 9.718436588532434,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 2.281581431375625,
+      "clearance_m": 1.781581431375625
+    },
+    {
+      "t_offset": 30.53591537475586,
+      "planner_mode": "CRUISING",
+      "north_m": 10.096499339591574,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 1.903522259293503,
+      "clearance_m": 1.403522259293503
+    },
+    {
+      "t_offset": 30.78818655014038,
+      "planner_mode": "CRUISING",
+      "north_m": 10.096499339591574,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 1.903522259293503,
+      "clearance_m": 1.403522259293503
+    },
+    {
+      "t_offset": 31.041695594787598,
+      "planner_mode": "CRUISING",
+      "north_m": 10.096499339591574,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 1.903522259293503,
+      "clearance_m": 1.403522259293503
+    },
+    {
+      "t_offset": 31.29739212989807,
+      "planner_mode": "CRUISING",
+      "north_m": 10.096499339591574,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 1.903522259293503,
+      "clearance_m": 1.403522259293503
+    },
+    {
+      "t_offset": 31.557855129241943,
+      "planner_mode": "CRUISING",
+      "north_m": 10.096499339591574,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 1.903522259293503,
+      "clearance_m": 1.403522259293503
+    },
+    {
+      "t_offset": 31.809409618377686,
+      "planner_mode": "CRUISING",
+      "north_m": 10.474562089860628,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.5254648619817184,
+      "clearance_m": 1.0254648619817184
+    },
+    {
+      "t_offset": 32.0625216960907,
+      "planner_mode": "CRUISING",
+      "north_m": 10.474562089860628,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.5254648619817184,
+      "clearance_m": 1.0254648619817184
+    },
+    {
+      "t_offset": 32.31388449668884,
+      "planner_mode": "CRUISING",
+      "north_m": 10.474562089860628,
+      "east_m": -0.00906793529578815,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.5254648619817184,
+      "clearance_m": 1.0254648619817184
+    },
+    {
+      "t_offset": 32.57852363586426,
+      "planner_mode": "CRUISING",
+      "north_m": 10.84150534812537,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.15849465187463,
+      "clearance_m": 0.65849465187463
+    },
+    {
+      "t_offset": 32.836522817611694,
+      "planner_mode": "CRUISING",
+      "north_m": 10.84150534812537,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.15849465187463,
+      "clearance_m": 0.65849465187463
+    },
+    {
+      "t_offset": 33.090254068374634,
+      "planner_mode": "CRUISING",
+      "north_m": 10.84150534812537,
+      "east_m": 0.0,
+      "alt_rel_m": 5.03,
+      "distance_to_obstacle_m": 1.15849465187463,
+      "clearance_m": 0.65849465187463
+    },
+    {
+      "t_offset": 33.34243392944336,
+      "planner_mode": "CRUISING",
+      "north_m": 11.219568098394422,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 0.7804319016055778,
+      "clearance_m": 0.28043190160557785
+    },
+    {
+      "t_offset": 33.594117164611816,
+      "planner_mode": "CRUISING",
+      "north_m": 11.219568098394422,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 0.7804319016055778,
+      "clearance_m": 0.28043190160557785
+    },
+    {
+      "t_offset": 33.850905895233154,
+      "planner_mode": "CRUISING",
+      "north_m": 11.219568098394422,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 0.7804319016055778,
+      "clearance_m": 0.28043190160557785
+    },
+    {
+      "t_offset": 34.102784633636475,
+      "planner_mode": "CRUISING",
+      "north_m": 11.219568098394422,
+      "east_m": 0.0,
+      "alt_rel_m": 5.04,
+      "distance_to_obstacle_m": 0.7804319016055778,
+      "clearance_m": 0.28043190160557785
+    },
+    {
+      "t_offset": 34.3548424243927,
+      "planner_mode": "CRUISING",
+      "north_m": 11.28628505437073,
+      "east_m": 0.0,
+      "alt_rel_m": 5.01,
+      "distance_to_obstacle_m": 0.7137149456292704,
+      "clearance_m": 0.2137149456292704
+    },
+    {
+      "t_offset": 34.609214782714844,
+      "planner_mode": "CRUISING",
+      "north_m": 11.28628505437073,
+      "east_m": 0.0,
+      "alt_rel_m": 5.01,
+      "distance_to_obstacle_m": 0.7137149456292704,
+      "clearance_m": 0.2137149456292704
+    },
+    {
+      "t_offset": 34.86483120918274,
+      "planner_mode": "CRUISING",
+      "north_m": 11.28628505437073,
+      "east_m": 0.0,
+      "alt_rel_m": 5.01,
+      "distance_to_obstacle_m": 0.7137149456292704,
+      "clearance_m": 0.2137149456292704
+    }
+  ]
+}
