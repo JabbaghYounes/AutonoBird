@@ -146,6 +146,38 @@ def connect(port: str, baud: int) -> "mavutil.mavfile":
     return master
 
 
+def start_gcs_heartbeat(master: "mavutil.mavfile") -> threading.Event:
+    """Start a daemon thread that sends a 1 Hz GCS heartbeat.
+
+    SiK V3 radios only inject RADIO_STATUS when they see active
+    bidirectional traffic; bare pymavlink without an outbound heartbeat
+    keeps the link in a low-rate idle mode where RADIO_STATUS never
+    arrives. Mirrors what MAVProxy / bridge.Vehicle do automatically.
+
+    Returns a threading.Event the caller can set to stop the thread.
+    """
+    stop = threading.Event()
+
+    def loop() -> None:
+        while not stop.is_set():
+            try:
+                master.mav.heartbeat_send(
+                    mavutil.mavlink.MAV_TYPE_GCS,
+                    mavutil.mavlink.MAV_AUTOPILOT_INVALID,
+                    0, 0, 0,
+                )
+            except Exception:
+                # Don't let a transient send error kill the thread —
+                # the next iteration will try again.
+                pass
+            stop.wait(1.0)
+
+    t = threading.Thread(target=loop, name="gcs-heartbeat", daemon=True)
+    t.start()
+    info("GCS heartbeat thread started (1 Hz) — keeps SiK link active")
+    return stop
+
+
 # ---------------------------------------------------------------------- #
 # Bench tests                                                            #
 # ---------------------------------------------------------------------- #
@@ -511,6 +543,7 @@ def main() -> int:
     print("=" * 68)
 
     master = connect(args.port, args.baud)
+    hb_stop = start_gcs_heartbeat(master)
 
     if args.mode in ("bench", "full"):
         section("BENCH: RADIO_STATUS BASELINE")
@@ -535,6 +568,7 @@ def main() -> int:
         print()
         info(f"CSV saved at: {csv_path}")
 
+    hb_stop.set()
     print()
     ok("done")
     return 0
