@@ -35,11 +35,17 @@ $HOME/Documents/AutonoBird, not its own cwd:
 
 The script auto-installs pyserial into the autonomy venv if missing,
 sets DISPLAY=:0 so the cv2 GUI lands on the VNC desktop, and writes all
-logs to scripts/sitl/logs/walk_<timestamp>/. Attach to the live output
-with:
+logs to scripts/sitl/logs/walk_<timestamp>/.
 
-  tmux attach -t walk-orch              # FSM / planner / STATUS lines
-  tmux attach -t walk-perception        # perception fps, det counts, GUI
+What appears on the VNC desktop automatically:
+  - cv2 GUI window         — rectified left frame + bbox + depth overlays
+  - "walk-orch" terminal   — auto-opened, tail of FSM / planner / STATUS
+                             lines (screen-recorder picks it up directly)
+
+Optional second viewer for perception heartbeats (fps, det count, JSONL
+emit messages):
+
+  tmux attach -t walk-perception
 
 Detach without killing the process: Ctrl+B then D.
 

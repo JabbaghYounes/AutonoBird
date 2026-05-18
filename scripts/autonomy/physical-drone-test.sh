@@ -126,6 +126,34 @@ make_walk_dir() {
   echo "$dir"
 }
 
+# Open a GUI terminal window on the VNC desktop, attached to the named tmux
+# session. Used so the orchestrator log appears on-screen for the recording.
+# Falls back gracefully if no GUI terminal emulator is installed.
+open_log_window() {
+  local session="$1"
+  local title="${2:-$session}"
+
+  local term_argv=()
+  if command -v lxterminal >/dev/null 2>&1; then
+    term_argv=(lxterminal --title="$title" -e "tmux attach -t $session")
+  elif command -v xterm >/dev/null 2>&1; then
+    term_argv=(xterm -title "$title" -fa monospace -fs 11 -bg black -fg "#9fef00" \
+               -geometry 110x32 -e "tmux attach -t $session")
+  elif command -v mate-terminal >/dev/null 2>&1; then
+    term_argv=(mate-terminal --title="$title" -e "tmux attach -t $session")
+  elif command -v xfce4-terminal >/dev/null 2>&1; then
+    term_argv=(xfce4-terminal --title="$title" -e "tmux attach -t $session")
+  else
+    c_warn "no GUI terminal emulator found (lxterminal / xterm / mate-terminal / xfce4-terminal)"
+    c_warn "→ to see $session, run manually: tmux attach -t $session"
+    return 1
+  fi
+
+  DISPLAY="$GUI_DISPLAY" "${term_argv[@]}" >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+  return 0
+}
+
 start_test() {
   local pose_mode="${1:-no}"
 
@@ -177,6 +205,14 @@ start_test() {
   fi
   tmux new-session -d -s "$ORCH_SESSION" "$full_orch"
 
+  # Give the orchestrator a moment to print its first lines before we attach.
+  sleep 1
+
+  c_info "opening orchestrator log window on DISPLAY=$GUI_DISPLAY ..."
+  if open_log_window "$ORCH_SESSION" "AutonoBird walk-orch"; then
+    c_ok "orchestrator log window open — screen recorder will pick it up"
+  fi
+
   echo
   c_ok "test started. Walk pattern:"
   echo "  1. Static baseline (~30s) — confirm STATUS lines, no errors"
@@ -187,9 +223,10 @@ start_test() {
     echo "  5. Gestures — STOP / LAND / COME / RECEDE at 1.5-2.5m, hold ~2s each"
   fi
   echo
-  c_info "watch orchestrator: tmux attach -t $ORCH_SESSION"
-  c_info "watch perception:   tmux attach -t $PERCEPTION_SESSION   (cv2 GUI on VNC)"
-  c_info "detach inside tmux: Ctrl+B then D"
+  c_info "orch log window:    auto-opened on the VNC desktop (recording-friendly)"
+  c_info "cv2 GUI window:     opens automatically when Hailo finishes warming up"
+  c_info "perception log:     tmux attach -t $PERCEPTION_SESSION   (optional, second viewer)"
+  c_info "detach inside tmux: Ctrl+B then D  (keeps the test running)"
   c_info "stop test:          $(basename "$0") stop"
   c_info "logs in:            $WALK_DIR"
 }
