@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # scripts/flight-controller/setup.sh
 #
-# Creates the Pi-side MAVLink bridge venv (pymavlink only) and verifies it
-# can connect to a running SITL on tcp:127.0.0.1:5760.
+# Creates the Pi-side MAVLink bridge venv (pymavlink + pyserial) and
+# verifies it can connect to a running SITL on tcp:127.0.0.1:5760 or to
+# a real Pixhawk on /dev/ttyACM0 / SiK ground unit on /dev/ttyUSB0.
 #
 # Run from the project root or from this directory; the script normalises
 # paths via $SCRIPT_DIR.
@@ -22,15 +23,20 @@ if [ ! -d "$VENV_DIR" ]; then
     "$PYTHON_BIN" -m venv "$VENV_DIR"
 fi
 
-# Activate, upgrade pip, install pymavlink
+# Activate, upgrade pip, install pymavlink + pyserial.
+# pyserial is required for any serial-transport MAVLink connection — pymavlink
+# lazily imports `serial` when opening /dev/ttyACM* or /dev/ttyUSB*. Without
+# it, test_bridge.py / test_sik_link.py / orchestrator.py all fail with
+# `ModuleNotFoundError: No module named 'serial'` once a real Pixhawk or
+# SiK radio is connected.
 # shellcheck source=/dev/null
 . "$VENV_DIR/bin/activate"
 pip install --upgrade pip wheel >/dev/null
-pip install "pymavlink>=2.4.40"
+pip install "pymavlink>=2.4.40" "pyserial>=3.5"
 
 echo
-echo "==> Verifying pymavlink import"
-python -c "import pymavlink; print('pymavlink', pymavlink.__version__)"
+echo "==> Verifying pymavlink + pyserial imports"
+python -c "import pymavlink, serial; print('pymavlink', pymavlink.__version__, '/ pyserial', serial.__version__)"
 
 echo
 echo "==> Copying config template if config.json doesn't exist"

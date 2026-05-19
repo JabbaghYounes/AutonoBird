@@ -10,9 +10,11 @@ The bridge (`bridge.py`) is the keystone between the Pi-side perception stack an
 
 | File | Purpose |
 |---|---|
-| `setup.sh` | Creates `venv/` with pymavlink. One-time. |
+| `setup.sh` | Creates `venv/` with pymavlink + pyserial. One-time. |
 | `bridge.py` | `Vehicle` class. Background reader thread, 1 Hz GCS heartbeat, command API. |
 | `test_bridge.py` | End-to-end smoke test against SITL. |
+| `test_sik_link.py` | SiK 433 MHz telemetry link test — bench validation + interactive walk-out CSV logging with operator markers. |
+| `plot_sik_los.py` | matplotlib plot generator for the SiK walk-out CSV (RSSI vs distance + marker table). Run with the autonomy venv's python since flight-controller venv lacks matplotlib. |
 | `config.example.json` / `config.json` | Connection URI + defaults. `config.json` is gitignored. |
 
 ### One-time install
@@ -22,7 +24,7 @@ cd scripts/flight-controller
 bash setup.sh
 ```
 
-Creates `venv/` and verifies `pymavlink` imports cleanly.
+Creates `venv/` and installs `pymavlink` + `pyserial`. `pyserial` is required for any serial-transport MAVLink connection (real Pixhawk over USB or SiK ground unit on `/dev/ttyUSB0`) — pymavlink lazily imports `serial` when opening such a device, and without it test scripts fail with `ModuleNotFoundError: No module named 'serial'`.
 
 ### Smoke test against SITL
 
@@ -34,6 +36,31 @@ Creates `venv/` and verifies `pymavlink` imports cleanly.
 ```
 
 The test connects to UDP 14550, waits for GPS fix, sets GUIDED, arms, takes off to 10 m, hovers 3 s, switches to RTL, watches the auto-land and disarm, then prints `PASS:` on success.
+
+### SiK 433 MHz telemetry link test
+
+`test_sik_link.py` is a comprehensive SiK link validator that runs in three modes:
+
+- `--mode bench` — connectivity check + RADIO_STATUS baseline sampling (~15 s) + parameter round-trip latency (5 trials). Outputs a strength classification (STRONG / MARGINAL / WEAK) based on median RSSI.
+- `--mode walkout` — interactive walk-out test. Streams every RADIO_STATUS sample to a CSV under `scripts/sitl/logs/sik_los_<timestamp>.csv`. Operator types `m <distance_m>` to mark waypoints; script tags the next sample with that distance. `q` or Ctrl+C to end. Post-walk analysis prints per-marker RSSI / noise / rxerrors and the furthest marker distance.
+- `--mode full` — bench then walkout (default).
+
+```bash
+./venv/bin/python test_sik_link.py                  # full (bench + walkout)
+./venv/bin/python test_sik_link.py --mode bench     # bench only
+./venv/bin/python test_sik_link.py --port /dev/ttyUSB1  # override default ground-unit device
+```
+
+After a walk-out, plot RSSI-vs-distance from the CSV (uses matplotlib via the autonomy venv since flight-controller venv intentionally lacks it):
+
+```bash
+~/Documents/AutonoBird/scripts/autonomy/venv/bin/python3 \
+  plot_sik_los.py \
+  ../sitl/logs/sik_los_<TIMESTAMP>.csv
+# Writes the PNG alongside the CSV.
+```
+
+**SiK behavioural quirk**: SiK V3 only injects `RADIO_STATUS` frames when the radio sees active bidirectional MAVLink traffic. `test_sik_link.py` spawns a daemon 1 Hz `MAV_TYPE_GCS` heartbeat thread on connect to satisfy this — without it, RADIO_STATUS never arrives even after `SR1_*` is configured. Any other pymavlink-based SiK consumer needs the same. `bridge.Vehicle` already does this.
 
 ### API surface (`Vehicle`)
 
