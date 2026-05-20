@@ -19,7 +19,10 @@ if [ "$EUID" -ne 0 ]; then
     echo ""
 fi
 
-# No pip dependencies needed - uses Python stdlib only
+# No pip dependencies needed by default - stdlib only.
+# Optional: if you set "include_battery": true in config.json to read
+# the Waveshare UPS HAT (B), install smbus2 first:
+#     sudo apt install python3-smbus2     # or: pip install smbus2
 echo "[1/3] Checking configuration..."
 if [ ! -f "$SCRIPT_DIR/config.json" ]; then
     cp "$SCRIPT_DIR/config.example.json" "$SCRIPT_DIR/config.json"

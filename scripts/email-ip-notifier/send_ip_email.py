@@ -83,6 +83,97 @@ def get_external_ip():
         return None
 
 
+def get_battery_status():
+    """Read battery status from a Waveshare UPS HAT (B) over I2C.
+
+    Returns a dict with keys 'percent', 'voltage' (V), 'current' (A),
+    'state' ('charging' / 'discharging' / 'unknown'), or None if smbus2
+    isn't installed, the I2C bus is unavailable, or the HAT doesn't
+    respond at the expected address.
+
+    Caller is expected to gate this behind the include_battery config
+    flag so Pis without the HAT incur no overhead.
+    """
+    try:
+        from smbus2 import SMBus
+    except ImportError:
+        return None
+
+    # INA219 registers + config for the UPS HAT (B). Values mirror the
+    # Waveshare datasheet + the working UPSentinel implementation.
+    REG_CONFIG = 0x00
+    REG_SHUNT_VOLTAGE = 0x01
+    REG_BUS_VOLTAGE = 0x02
+    REG_CALIBRATION = 0x05
+    CONFIG_VALUE = 0x399F           # 32 V bus, +/- 320 mV shunt, 12-bit ADC, continuous
+    CAL_VALUE = 4096                # for 0.1 mA current LSB with 0.1 ohm shunt
+    SHUNT_RESISTANCE = 0.1          # ohms
+    I2C_BUS = 1
+    I2C_ADDR = 0x42
+
+    # 2S Li-ion discharge curve (volts -> percent). Piecewise-linear.
+    VOLTAGE_CURVE = [
+        (6.0, 0), (6.4, 5), (6.8, 10), (7.0, 20),
+        (7.2, 40), (7.4, 60), (7.6, 80), (7.9, 90),
+        (8.2, 95), (8.4, 100),
+    ]
+    CURRENT_NOISE_THRESHOLD = 0.005  # 5 mA below which state is "unknown"
+
+    def _read_word(bus, addr, reg):
+        # INA219 sends big-endian; smbus2 returns little-endian
+        data = bus.read_word_data(addr, reg)
+        return ((data & 0xFF) << 8) | ((data >> 8) & 0xFF)
+
+    def _write_word(bus, addr, reg, value):
+        swapped = ((value & 0xFF) << 8) | ((value >> 8) & 0xFF)
+        bus.write_word_data(addr, reg, swapped)
+
+    def _voltage_to_percent(v):
+        if v <= VOLTAGE_CURVE[0][0]:
+            return 0
+        if v >= VOLTAGE_CURVE[-1][0]:
+            return 100
+        for i in range(1, len(VOLTAGE_CURVE)):
+            v_low, p_low = VOLTAGE_CURVE[i - 1]
+            v_high, p_high = VOLTAGE_CURVE[i]
+            if v <= v_high:
+                ratio = (v - v_low) / (v_high - v_low)
+                return int(p_low + ratio * (p_high - p_low))
+        return 100
+
+    try:
+        with SMBus(I2C_BUS) as bus:
+            _write_word(bus, I2C_ADDR, REG_CONFIG, CONFIG_VALUE)
+            _write_word(bus, I2C_ADDR, REG_CALIBRATION, CAL_VALUE)
+
+            # Bus voltage register: top 13 bits are the value, LSB = 4 mV
+            raw_bus = _read_word(bus, I2C_ADDR, REG_BUS_VOLTAGE)
+            voltage = (raw_bus >> 3) * 0.004
+
+            # Shunt voltage: signed 16-bit, LSB = 10 uV
+            raw_shunt = _read_word(bus, I2C_ADDR, REG_SHUNT_VOLTAGE)
+            if raw_shunt & 0x8000:
+                raw_shunt -= 0x10000
+            current = (raw_shunt * 0.00001) / SHUNT_RESISTANCE
+
+            percent = _voltage_to_percent(voltage)
+            if current > CURRENT_NOISE_THRESHOLD:
+                state = "charging"
+            elif current < -CURRENT_NOISE_THRESHOLD:
+                state = "discharging"
+            else:
+                state = "unknown"
+
+            return {
+                "percent": percent,
+                "voltage": round(voltage, 2),
+                "current": round(current, 3),
+                "state": state,
+            }
+    except (FileNotFoundError, OSError):
+        return None
+
+
 def load_config():
     """Load configuration from config.json."""
     script_dir = Path(__file__).parent
@@ -104,6 +195,7 @@ def send_ip_email(config):
     all_ips = get_all_ips()
     wifi_ssid = get_wifi_ssid()
     external_ip = get_external_ip() if config.get("include_external_ip", False) else None
+    battery = get_battery_status() if config.get("include_battery", False) else None
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     body = f"Raspberry Pi Boot Notification\n"
@@ -120,6 +212,9 @@ def send_ip_email(config):
 
     if external_ip:
         body += f"External IP: {external_ip}\n"
+
+    if battery:
+        body += f"Battery:     {battery['percent']}% ({battery['voltage']} V, {battery['state']})\n"
 
     body += f"\nSSH: ssh {config.get('ssh_user', 'pi')}@{local_ip}\n"
 
