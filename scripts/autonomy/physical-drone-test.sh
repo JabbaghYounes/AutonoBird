@@ -48,13 +48,18 @@ die()     { c_fail "$*"; exit 1; }
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [start|stop|status] [--pose]
+Usage: $(basename "$0") [start|stop|status] [--pose] [--show-depth]
 
   start  (default)  Pre-flight checks, create a session log directory,
                     launch perception + orchestrator in detached tmux
                     sessions. Attach with:  tmux attach -t $ORCH_SESSION
   stop              Tear down both tmux sessions and the processes inside.
   status            Show whether sessions are running and tail recent logs.
+
+  --show-depth      Open the second cv2 window with the colourised SGBM
+                    depth heatmap alongside the YOLO+bbox window. Useful
+                    for live demos where the depth fusion needs to be
+                    visible to the audience.
 
   --pose            Engage the pose pipeline (depth_detect --pose +
                     orchestrator --enable-gestures). First live-Hailo
@@ -156,6 +161,7 @@ open_log_window() {
 
 start_test() {
   local pose_mode="${1:-no}"
+  local show_depth_mode="${2:-no}"
 
   if is_running "$PERCEPTION_SESSION" || is_running "$ORCH_SESSION"; then
     die "A walk session is already running. Tear down with:  $(basename "$0") stop"
@@ -168,14 +174,17 @@ start_test() {
   c_info "session log directory: $WALK_DIR"
 
   # Build the per-process commands. We tee stdout to logs and use --pose /
-  # --enable-gestures conditionally.
-  local pose_flag="" gestures_flag=""
+  # --enable-gestures / --show-depth conditionally.
+  local pose_flag="" gestures_flag="" show_depth_flag=""
   if [[ "$pose_mode" == "yes" ]]; then
     pose_flag="--pose"
     gestures_flag="--enable-gestures"
   fi
+  if [[ "$show_depth_mode" == "yes" ]]; then
+    show_depth_flag="--show-depth"
+  fi
 
-  local detect_cmd="python3 depth_detect.py $pose_flag \
+  local detect_cmd="python3 depth_detect.py $pose_flag $show_depth_flag \
     --jsonl $WALK_DIR/perception.jsonl \
     --threshold $CONFIDENCE_THRESHOLD \
     2>&1 | tee $WALK_DIR/perception.log"
@@ -294,11 +303,13 @@ show_status() {
 # -------------------------------------------------------------------------- #
 
 POSE_MODE="no"
+SHOW_DEPTH_MODE="no"
 COMMAND="start"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pose)             POSE_MODE="yes"; shift ;;
+    --show-depth)       SHOW_DEPTH_MODE="yes"; shift ;;
     -h|--help)          usage; exit 0 ;;
     start|stop|status)  COMMAND="$1"; shift ;;
     *)                  die "Unknown argument: $1 (see --help)" ;;
@@ -306,7 +317,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$COMMAND" in
-  start)   start_test "$POSE_MODE" ;;
+  start)   start_test "$POSE_MODE" "$SHOW_DEPTH_MODE" ;;
   stop)    stop_test ;;
   status)  show_status ;;
   *)       die "Unknown command: $COMMAND" ;;
