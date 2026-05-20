@@ -2,7 +2,19 @@
 
 An AI-driven autonomous drone platform built on a HolyBro QUAV250 airframe, designed to demonstrate onboard perception, voice control, and mission execution using only edge hardware — no cloud connectivity required.
 
+![T5 closed-loop avoidance in Gazebo Harmonic](scripts/sitl/logs/t5_gazebo_20260517-030225.png)
+
+*T5 closed-loop avoidance against a Gazebo-physics-grounded obstacle. Left: drone trajectory sidestepping the 1 m diameter cylinder. Centre: clearance over time, minimum 1.92 m (6.4x over the 0.3 m dissertation bound). Right: planner mode + N-progress, CRUISING -> AVOIDING -> CRUISING.*
+
 AutonoBird is a university dissertation project in Applied Computer Science. The aim is to show that a sub-£500 embedded system (Raspberry Pi 5 + HAILO AI HAT+) can deliver real-time obstacle detection and autonomous navigation comparable to commercial platforms on a fraction of the budget.
+
+## Headline results
+
+**138 ms** end-to-end perception loop on Hailo-8 (NFR1 target 250 ms) · **945 g** AUW with T/W ~2.5:1 · **1.92 m** minimum T5 clearance in Gazebo closed-loop (6.4x over the 0.3 m bound) · **25 m** SiK 433 MHz indoor through-wall LOS at **0** packet loss over 239 samples · **10/10** T6 mission replication at +/-5 % extent tolerance · **38 mm** max horizontal drift in 60 s GUIDED auto-hold (bound 500 mm).
+
+## Tech stack
+
+Raspberry Pi 5 (8 GB) · Hailo-8 NPU on Raspberry Pi AI HAT+ · Pixhawk 6C Mini · ArduCopter 4.6.3 · AR0144 USB global-shutter stereo · OpenCV SGBM stereo matching · YOLOv8n via HailoRT 4.23 · ExpressLRS over RadioMaster Pocket · HolyBro QUAV250 carbon-fibre airframe · ArduPilot SITL + Gazebo Harmonic for closed-loop validation.
 
 ## Documentation
 
@@ -24,6 +36,13 @@ Subsystem-specific documentation lives alongside the code under `scripts/<subsys
 - [`scripts/jarvis/context.md`](scripts/jarvis/context.md) — local voice assistant
 - [`scripts/pico-led/setup-guide.md`](scripts/pico-led/setup-guide.md) — status LEDs on the Pico 2 W (code complete, hardware blocked)
 - [`scripts/demo/readme.md`](scripts/demo/readme.md) — one-command tmux launchers for the May 2026 presentation demos
+
+## Related projects
+
+Two sibling tools live in separate repos and are referenced in the dissertation but are not part of the AutonoBird airframe stack:
+
+- [**Benchy**](https://github.com/JabbaghYounes/Benchy) — edge-AI NPU benchmark suite. Runs on two bench-only Pi 5 test rigs (Pi A: 16 GB / Hailo-8, Pi B: 4 GB / Hailo-10H) to empirically pick which HAT variant flies on the drone. The 2.6x-6.9x Hailo-8 advantage that drove the AutonoBird NPU decision came out of this suite.
+- [**UPSentinel**](https://github.com/JabbaghYounes/UPSentinel) — desktop tray indicator for the Waveshare UPS HAT (B) on Pi OS Bookworm. Deployed alongside Benchy on both test Pis as visible UPS-battery monitoring while benchmarks run. The drone itself does not run UPSentinel — the airframe is UBEC-powered.
 
 ## Licence
 
