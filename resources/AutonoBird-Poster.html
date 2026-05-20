@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutonoBird Research Poster — V10 (2026-05-19)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #fafafa;
+            --bg-card: #ffffff;
+            --navy: #1e3a5f;
+            --navy-dark: #14253a;
+            --amber: #c08124;
+            --amber-light: #d39a45;
+            --text-primary: #1a202c;
+            --text-muted: #5b6b7a;
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e0;
+            --status-done: #0f7a4f;
+            --status-warn: #b45309;
+            --status-issue: #9b1c1c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @page { size: A1 portrait; margin: 0; }
+
+        body {
+            font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.55;
+        }
+
+        .poster {
+            width: 594mm;
+            min-height: 841mm;
+            padding: 30mm;
+            background: var(--bg-page);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .poster::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(30, 58, 95, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 95, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid var(--navy);
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-block h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 72px;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: var(--navy);
+            margin-bottom: 12px;
+            line-height: 1.05;
+        }
+
+        .title-block h1 .accent {
+            color: var(--amber);
+        }
+
+        .version-stamp {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--amber);
+            padding: 4px 11px;
+            background: rgba(192, 129, 36, 0.08);
+            border: 1px solid rgba(192, 129, 36, 0.30);
+            border-radius: 5px;
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+
+        .subtitle {
+            font-size: 23px;
+            color: var(--text-muted);
+            font-weight: 400;
+            max-width: 720px;
+            line-height: 1.4;
+        }
+
+        .author-info {
+            text-align: right;
+            padding: 22px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(20, 37, 58, 0.05);
+        }
+
+        .author-info .name {
+            font-family: 'Inter', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+
+        .author-info .details {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background: var(--navy);
+            border-radius: 12px;
+            margin-left: auto;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .logo-placeholder img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 22px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 26px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(20, 37, 58, 0.05);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--amber);
+        }
+
+        .card h2 {
+            font-family: 'Inter', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--navy);
+            margin-bottom: 16px;
+            letter-spacing: -0.2px;
+        }
+
+        .card p {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.65;
+            margin-bottom: 12px;
+        }
+
+        .card p:last-child { margin-bottom: 0; }
+        .card ul { list-style: none; padding: 0; }
+
+        .card li {
+            font-size: 14px;
+            color: var(--text-primary);
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.55;
+        }
+
+        .card li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 16px;
+            width: 6px;
+            height: 6px;
+            background: var(--amber);
+            border-radius: 50%;
+        }
+
+        .intro-card { grid-column: 1; grid-row: 1; }
+        .rq-card { grid-column: 2 / 4; grid-row: 1; }
+
+        .research-question {
+            background: rgba(30, 58, 95, 0.05);
+            border-left: 4px solid var(--navy);
+            padding: 16px 22px;
+            border-radius: 0 8px 8px 0;
+            margin: 14px 0;
+        }
+
+        .research-question p {
+            font-size: 16px;
+            font-style: italic;
+            color: var(--navy);
+            margin: 0;
+            line-height: 1.55;
+        }
+
+        .objectives {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .objective-item {
+            background: rgba(192, 129, 36, 0.06);
+            border: 1px solid rgba(192, 129, 36, 0.22);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.55;
+        }
+
+        .objective-item strong {
+            color: var(--amber);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .methods-card { grid-column: 1; grid-row: 2; }
+        .results-card { grid-column: 2 / 4; grid-row: 2 / 4; }
+
+        .architecture {
+            background: rgba(30, 58, 95, 0.03);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            padding: 12px 14px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 100px;
+            box-shadow: 0 2px 4px rgba(20, 37, 58, 0.04);
+        }
+
+        .arch-node.highlight {
+            border-color: var(--amber);
+            border-width: 2px;
+            box-shadow: 0 2px 10px rgba(192, 129, 36, 0.15);
+        }
+
+        .arch-node .label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .arch-node .name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--navy);
+            line-height: 1.35;
+        }
+
+        .arch-arrow {
+            color: var(--navy);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            opacity: 0.55;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .metric {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(20, 37, 58, 0.04);
+        }
+
+        .metric .value {
+            font-family: 'Inter', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--navy);
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .metric .unit {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .metric .label {
+            font-size: 10px;
+            color: var(--amber);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .discussion-card { grid-column: 1; grid-row: 3; }
+        .references-card { grid-column: 1 / 4; grid-row: 4; }
+
+        .references-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .ref-item {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            padding-left: 26px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .ref-item::before {
+            content: attr(data-num);
+            position: absolute;
+            left: 0;
+            color: var(--amber);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .tech-tag {
+            background: rgba(30, 58, 95, 0.06);
+            border: 1px solid rgba(30, 58, 95, 0.18);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--navy);
+            font-weight: 500;
+        }
+
+        .tech-tag.hardware {
+            background: rgba(192, 129, 36, 0.07);
+            border-color: rgba(192, 129, 36, 0.25);
+            color: var(--amber);
+        }
+
+        .acknowledgements {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-light);
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .acknowledgements strong { color: var(--navy); }
+
+        .key-finding {
+            background: rgba(30, 58, 95, 0.04);
+            border: 1px solid rgba(30, 58, 95, 0.18);
+            border-left: 4px solid var(--amber);
+            border-radius: 0 10px 10px 0;
+            padding: 18px 22px;
+            margin-top: 18px;
+        }
+
+        .key-finding h3 {
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--navy);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .key-finding p {
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .key-finding strong { color: var(--amber); }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .poster { width: 100%; min-height: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <header class="header">
+            <div class="title-block">
+                <h1>Autono<span class="accent">Bird</span></h1>
+                <span class="version-stamp">V10 &middot; 2026-05-19</span>
+                <p class="subtitle">Edge-AI Autonomous Drone Navigation Using NPU-Accelerated Stereo Vision on Embedded Systems</p>
+            </div>
+            <div class="author-info">
+                <div class="name">Younes Jabbagh</div>
+                <div class="details">
+                    BSc Applied Computer Science<br>
+                    Supervisors: Andy Watson &amp; Tomasz Bergier<br>
+                    City College Plymouth &middot; 2026
+                </div>
+                <div class="logo-placeholder">
+                    <img src="dissertation/figure-1-airframe-completed-topview.jpg" alt="AutonoBird airframe">
+                </div>
+            </div>
+        </header>
+
+        <div class="content-grid">
+            <div class="card intro-card">
+                <h2>Introduction</h2>
+                <p>Commercial autonomous drones (DJI, Skydio) cost &pound;1,800&ndash;&pound;6,000+ and ship as closed systems &mdash; their perception, planning, and control layers cannot be inspected or extended for research.</p>
+                <p>This project asks whether equivalent real-time perception + autonomy can be delivered on a sub-&pound;800 open platform built around a Raspberry Pi 5 and a dedicated edge-AI NPU, with every layer of the stack open for modification.</p>
+                <p><strong>AutonoBird</strong> is a HolyBro QUAV250 airframe with a Pi 5 + Hailo-8 NPU + AR0144 stereo camera mounted on the top deck, running ArduCopter 4.6.3 on a Pixhawk 6C Mini. Total all-up weight 945 g; per-airframe build &pound;761.</p>
+            </div>
+
+            <div class="card rq-card">
+                <h2>Research Question &amp; Objectives</h2>
+                <div class="research-question">
+                    <p>Can a low-cost embedded system (Raspberry Pi 5 with a Hailo NPU) achieve real-time obstacle detection and autonomous navigation comparable to commercial drone platforms, while operating entirely on-device without cloud connectivity?</p>
+                </div>
+                <div class="objectives">
+                    <div class="objective-item">
+                        <strong>NFR1 &mdash; Latency</strong><br>
+                        End-to-end perception loop &lt; 250 ms on embedded hardware
+                    </div>
+                    <div class="objective-item">
+                        <strong>FR3 &mdash; Avoidance</strong><br>
+                        Obstacle clearance &gt; 0.3 m in closed-loop perception-driven flight
+                    </div>
+                    <div class="objective-item">
+                        <strong>FR4 &mdash; Hover</strong><br>
+                        Position-held hover within 0.5 m drift over 60 s
+                    </div>
+                    <div class="objective-item">
+                        <strong>FR5 &mdash; Patrol</strong><br>
+                        Autonomous waypoint mission completion &gt; 80%
+                    </div>
+                </div>
+            </div>
+
+            <div class="card methods-card">
+                <h2>Methods</h2>
+                <p><strong>Hardware:</strong> QUAV250 airframe with Pi 5 + AI HAT+ (Hailo-8 NPU, 26 TOPS INT8) + AR0144 USB stereo camera (51.92 mm baseline), Pixhawk 6C Mini flight controller, SiK 433 MHz telemetry, ExpressLRS RC.</p>
+                <p><strong>Perception:</strong> stereo rectify (cal-4, RMS 1.10 px) -&gt; SGBM disparity at half resolution -&gt; YOLOv8n on Hailo-8 -&gt; depth fusion at each bbox centroid via median of 5 &times; 5 patch.</p>
+                <p><strong>Autonomy:</strong> custom <em>pymavlink</em>-based <em>Vehicle</em> bridge (UDP for SITL, serial for real Pixhawk) -&gt; 9-state flight FSM with Schmitt-trigger hysteresis -&gt; reactive sector-based planner (CRUISING &lt;-&gt; AVOIDING) emitting velocity setpoints at 10 Hz.</p>
+                <p><strong>Validation:</strong> ArduPilot SITL with QUAV250 parameter overlay; Gazebo Harmonic for physics-grounded T5; handheld walkaround on the airframe-mounted stack (no motors) for hardware-side software validation.</p>
+                <div class="tech-stack">
+                    <span class="tech-tag hardware">Pi 5</span>
+                    <span class="tech-tag hardware">Hailo-8</span>
+                    <span class="tech-tag hardware">AR0144</span>
+                    <span class="tech-tag hardware">Pixhawk 6C</span>
+                    <span class="tech-tag">ArduPilot 4.6.3</span>
+                    <span class="tech-tag">YOLOv8n</span>
+                    <span class="tech-tag">SGBM</span>
+                    <span class="tech-tag">pymavlink</span>
+                    <span class="tech-tag">Gazebo Harmonic</span>
+                </div>
+            </div>
+
+            <div class="card results-card">
+                <h2>Results &amp; Key Findings</h2>
+
+                <div class="architecture">
+                    <div class="arch-flow">
+                        <div class="arch-node">
+                            <div class="label">Input</div>
+                            <div class="name">AR0144 Stereo</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node">
+                            <div class="label">Rectify</div>
+                            <div class="name">cal-4</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node">
+                            <div class="label">Depth</div>
+                            <div class="name">SGBM &frac12;-res<br>(76 ms)</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node highlight">
+                            <div class="label">Detect</div>
+                            <div class="name">YOLOv8n /<br>Hailo-8 (18 ms)</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node">
+                            <div class="label">Planner</div>
+                            <div class="name">Reactive<br>Avoider</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node">
+                            <div class="label">Bridge</div>
+                            <div class="name">MAVLink<br>pymavlink</div>
+                        </div>
+                        <span class="arch-arrow">-&gt;</span>
+                        <div class="arch-node">
+                            <div class="label">Autopilot</div>
+                            <div class="name">Pixhawk 6C<br>ArduCopter</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="value">138</div>
+                        <div class="unit">ms / loop</div>
+                        <div class="label">NFR1 Met<br>(250 ms bound)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">1.92</div>
+                        <div class="unit">m clearance</div>
+                        <div class="label">T5 (Gazebo)<br>6.4&times; over 0.3 m</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">38</div>
+                        <div class="unit">mm h-drift</div>
+                        <div class="label">T4 Hover SITL<br>over 60 s</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">100%</div>
+                        <div class="unit">10 / 10 runs</div>
+                        <div class="label">T6 Multi-Run<br>&plusmn;5% tolerance</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">6.8&times;</div>
+                        <div class="unit">throughput</div>
+                        <div class="label">Hailo-8 vs<br>Hailo-10H YOLOv8n</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">25</div>
+                        <div class="unit">m through-wall</div>
+                        <div class="label">SiK Telemetry<br>0 packet loss / 239</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">945</div>
+                        <div class="unit">g AUW</div>
+                        <div class="label">Airframe + stack<br>T/W ~2.5:1</div>
+                    </div>
+                    <div class="metric">
+                        <div class="value">&pound;761</div>
+                        <div class="unit">per airframe</div>
+                        <div class="label">NFR4 Met<br>(&pound;800 revised)</div>
+                    </div>
+                </div>
+
+                <div class="key-finding">
+                    <h3>Key Finding &mdash; The NPU is not the bottleneck</h3>
+                    <p>Within the 138 ms perception loop, the Hailo-8 NPU consumes only 18.5 ms (13%); CPU stereo block-matching (SGBM) consumes 76 ms (55%). The 2.6&times;&ndash;6.9&times; Hailo-8 vs Hailo-10H throughput advantage on raw NPU inference therefore translates to only ~1.4&times; at the system level. <strong>System throughput on Pi-class single-stereo-pair perception is bounded by the CPU stereo budget, not the NPU.</strong> Headline-TOPS NPU selection on this hardware class is mis-prioritising &mdash; productive next steps are CPU-side optimisations (ROI-only SGBM, YOLO-conditional depth).</p>
+                </div>
+            </div>
+
+            <div class="card discussion-card">
+                <h2>Discussion &amp; Verdict</h2>
+                <p>The dissertation&apos;s hypothesis (&ge; 95% detection accuracy, &le; 250 ms latency, safe autonomous flight in structured environments) resolves as <strong>supported in SITL plus hardware-validated software stack</strong> for the components measurable within scope.</p>
+                <p><strong>Outcome (FR/NFR table):</strong> 10 met / 3 partial / 2 unmeasured. The 2026-05-18 handheld walkaround validated the full software path on the airframe-mounted stack: perception loop reproduces baseline within noise, 161 planner CRUISING &lt;-&gt; AVOIDING transitions on real stereo, zero MAVLink bridge errors over 3:34 min.</p>
+                <p><strong>Remaining gap:</strong> motion side &mdash; drone leaving the ground under autonomous control, where airframe vibration on SGBM and EKF noise on real IMU signals are first exercised. Bounded as Stage 4 hardware-flight work.</p>
+                <p><strong>Contribution:</strong> Benchy-driven NPU-selection methodology; empirical NPU-is-not-the-bottleneck finding; sub-&pound;800 open-architecture autonomous platform within the consumer drone price band.</p>
+            </div>
+
+            <div class="card references-card">
+                <h2>References &amp; Acknowledgements</h2>
+                <div class="references-grid">
+                    <div>
+                        <div class="ref-item" data-num="[1]">Hirschm&uuml;ller, H. (2008). Stereo processing by semiglobal matching and mutual information. <em>IEEE TPAMI</em>, 30(2), 328&ndash;341.</div>
+                        <div class="ref-item" data-num="[2]">Ultralytics (2024). YOLOv8 architecture and Hailo Model Zoo HEF reference.</div>
+                        <div class="ref-item" data-num="[3]">ArduPilot Dev Team (2024). ArduPilot Copter documentation and Gazebo Harmonic integration guide.</div>
+                    </div>
+                    <div>
+                        <div class="ref-item" data-num="[4]">Hailo Technologies (2024). Hailo-8 / Hailo-10H AI Processor datasheets; HailoRT 4.23.</div>
+                        <div class="ref-item" data-num="[5]">Karpathy, A. (2022). Tesla AI Day vision-only navigation architecture.</div>
+                        <div class="ref-item" data-num="[6]">Markovic, J. et al. (2021). Multi-sensor fusion for indoor UAV localisation. <em>Sensors</em>, 21(11), 3863.</div>
+                    </div>
+                    <div>
+                        <div class="ref-item" data-num="[7]">Jabbagh, Y. (2026). Benchy &mdash; edge-AI NPU benchmark suite for Pi-class accelerators. <em>github.com/JabbaghYounes/Benchy</em></div>
+                        <div class="ref-item" data-num="[8]">Jabbagh, Y. (2026). AutonoBird &mdash; open-architecture edge-AI drone platform. <em>github.com/JabbaghYounes/AutonoBird</em></div>
+                        <div class="ref-item" data-num="[9]">HolyBro (2024). QUAV250 build guide and Pixhawk 6C Mini hardware reference.</div>
+                    </div>
+                </div>
+                <div class="acknowledgements">
+                    <strong>Acknowledgements:</strong> Thanks to Andy Watson and Tomasz Bergier for supervision throughout the project, and to City College Plymouth for providing testing facilities and access to fabrication equipment. The Benchy benchmark suite &mdash; built as a supporting tool for the empirical NPU selection in this work &mdash; is released under MIT licence.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

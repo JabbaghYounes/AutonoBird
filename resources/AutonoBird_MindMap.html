@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutonoBird Project Mind Map — V10 (2026-05-19)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #fafafa;
+            --bg-card: #ffffff;
+            --bg-elev: #f3f4f6;
+            --bg-deep: #ffffff;
+            --text-primary: #1a202c;
+            --text-muted: #5b6b7a;
+            --navy: #1e3a5f;
+            --navy-dark: #14253a;
+            --navy-soft: rgba(30, 58, 95, 0.06);
+            --amber: #c08124;
+            --amber-light: #d39a45;
+            --amber-soft: rgba(192, 129, 36, 0.10);
+            --border-default: #cbd5e0;
+            --border-light: #e2e8f0;
+            --status-done: #0f7a4f;
+            --status-warn: #b45309;
+            --status-issue: #9b1c1c;
+            --status-planned: #1e3a5f;
+            --status-deferred: #5b21b6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .viewport {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            cursor: grab;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(30, 58, 95, 0.04) 0%, transparent 65%),
+                var(--bg-page);
+        }
+
+        .viewport.panning { cursor: grabbing; }
+
+        .canvas {
+            width: 3200px;
+            height: 2600px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            background-image:
+                linear-gradient(rgba(30, 58, 95, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 95, 0.045) 1px, transparent 1px);
+            background-size: 80px 80px;
+        }
+
+        .central-node {
+            position: absolute;
+            left: 1450px;
+            top: 1150px;
+            width: 300px;
+            height: 300px;
+            background: var(--navy);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow:
+                0 16px 56px rgba(30, 58, 95, 0.22),
+                0 0 0 8px rgba(30, 58, 95, 0.06);
+            z-index: 100;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        .central-node h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.6px;
+            color: #ffffff;
+        }
+
+        .central-node .version {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 1.4px;
+            color: var(--amber-light);
+            text-transform: uppercase;
+        }
+
+        .central-node p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            padding: 0 28px;
+            margin-top: 12px;
+            line-height: 1.55;
+        }
+
+        .branch {
+            position: absolute;
+            z-index: 50;
+            width: 340px;
+            user-select: none;
+            transition: box-shadow 0.18s ease;
+        }
+
+        .branch.dragging {
+            z-index: 99;
+            box-shadow: 0 28px 60px rgba(30, 58, 95, 0.22);
+            opacity: 0.98;
+        }
+
+        .branch-header {
+            padding: 14px 20px;
+            border-radius: 10px 10px 0 0;
+            background: var(--navy);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: 0.2px;
+            border-bottom: 3px solid var(--amber);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .branch-header:active,
+        .branch.dragging .branch-header { cursor: grabbing; }
+
+        .branch-header .drag-handle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.55);
+            letter-spacing: 1px;
+        }
+
+        .branch-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 0 0 0;
+        }
+
+        .sub-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.55;
+            box-shadow: 0 2px 6px rgba(20, 37, 58, 0.05);
+        }
+
+        .sub-item strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 7px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            border: 1px solid;
+        }
+
+        .tag-done     { background: rgba(15, 122, 79, 0.10); color: var(--status-done);     border-color: rgba(15, 122, 79, 0.32); }
+        .tag-progress { background: rgba(180, 83, 9, 0.10);  color: var(--status-warn);     border-color: rgba(180, 83, 9, 0.32);  }
+        .tag-issue    { background: rgba(155, 28, 28, 0.10); color: var(--status-issue);    border-color: rgba(155, 28, 28, 0.32); }
+        .tag-planned  { background: rgba(30, 58, 95, 0.08);  color: var(--status-planned);  border-color: rgba(30, 58, 95, 0.28);  }
+        .tag-deferred { background: rgba(91, 33, 182, 0.08); color: var(--status-deferred); border-color: rgba(91, 33, 182, 0.28); }
+
+        .connections {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-line {
+            stroke: var(--border-default);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 6,6;
+            opacity: 0.8;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 8px 24px rgba(20, 37, 58, 0.10);
+        }
+
+        .controls button {
+            background: var(--bg-card);
+            color: var(--navy);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 36px;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .controls button:hover {
+            background: var(--amber-soft);
+            border-color: var(--amber);
+            color: var(--amber);
+        }
+
+        .controls .zoom-readout {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 6px 10px;
+            min-width: 56px;
+            text-align: center;
+            align-self: center;
+        }
+
+        .help-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            box-shadow: 0 6px 18px rgba(20, 37, 58, 0.10);
+        }
+
+        .help-bar kbd {
+            display: inline-block;
+            background: var(--bg-elev);
+            border: 1px solid var(--border-light);
+            border-radius: 3px;
+            padding: 1px 6px;
+            margin: 0 2px;
+            color: var(--navy);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 14px 18px;
+            z-index: 200;
+            box-shadow: 0 8px 24px rgba(20, 37, 58, 0.10);
+            min-width: 220px;
+        }
+
+        .legend h3 {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .legend-item:last-child { margin-bottom: 0; }
+
+        .legend-tag {
+            display: inline-block;
+            min-width: 64px;
+            text-align: center;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            border: 1px solid;
+        }
+
+        .page-title {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 12px 18px;
+            box-shadow: 0 6px 18px rgba(20, 37, 58, 0.08);
+            max-width: 520px;
+        }
+
+        .page-title h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--navy);
+            letter-spacing: -0.3px;
+        }
+
+        .page-title p {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.55;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-title">
+        <h1>AutonoBird Project Status</h1>
+        <p>V10 &middot; 2026-05-19 &middot; SITL + hardware-validated software stack</p>
+    </div>
+
+    <div class="controls">
+        <button id="btn-zoom-out" title="Zoom out">&minus;</button>
+        <div class="zoom-readout" id="zoom-readout">100%</div>
+        <button id="btn-zoom-in" title="Zoom in">+</button>
+        <button id="btn-fit" title="Fit to screen">Fit</button>
+        <button id="btn-reset" title="Reset layout">Reset</button>
+    </div>
+
+    <div class="viewport" id="viewport">
+        <div class="canvas" id="canvas">
+            <svg class="connections" viewBox="0 0 3200 2600">
+                <path class="connection-line" data-line-id="hardware"   d="" />
+                <path class="connection-line" data-line-id="goals"      d="" />
+                <path class="connection-line" data-line-id="software"   d="" />
+                <path class="connection-line" data-line-id="features"   d="" />
+                <path class="connection-line" data-line-id="vision"     d="" />
+                <path class="connection-line" data-line-id="progress"   d="" />
+                <path class="connection-line" data-line-id="challenges" d="" />
+                <path class="connection-line" data-line-id="research"   d="" />
+            </svg>
+
+            <div class="central-node">
+                <h1>AutonoBird</h1>
+                <div class="version">V10 &middot; 2026-05-19</div>
+                <p>Edge-AI autonomous drone<br>Pi 5 + Hailo-8 NPU</p>
+            </div>
+
+            <div class="branch" data-branch-id="hardware">
+                <div class="branch-header"><span>Hardware Stack</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Raspberry Pi 5 (16 GB)</strong>
+                        Companion computer running perception + autonomy stack
+                        <span class="tag tag-done">Built</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>AI HAT+ (Hailo-8 NPU, 26 TOPS INT8)</strong>
+                        Benchy-selected over Hailo-10H by 2.6&times;&ndash;6.9&times; throughput ratio
+                        <span class="tag tag-done">Selected &middot; Mounted</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>AR0144 USB stereo camera</strong>
+                        cal-4 calibration, 51.92 mm baseline, accurate band 0.3&ndash;1.5 m
+                        <span class="tag tag-done">Calibrated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Pixhawk 6C Mini + ArduCopter 4.6.3</strong>
+                        QUAV250 frame; Stage 2 bring-up complete; FLTMODE / failsafe / battery params validated
+                        <span class="tag tag-done">Flashed &middot; Validated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>ZTW UBEC 8A (5 V)</strong>
+                        Replaces Waveshare UPS HAT (pogo-pin vibration failure). Powers Pi via USB-C from 4S pack
+                        <span class="tag tag-done">Wired &middot; Validated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>SiK 433 MHz telemetry + ELRS 2.4 GHz RC</strong>
+                        SiK on TELEM1 (MAVLink2 @ 57600). ELRS RP4TD on GPS2 + RadioMaster Pocket. Both validated
+                        <span class="tag tag-done">Validated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Airframe AUW (with imaging stack)</strong>
+                        945 g on 4S 1500 mAh. T/W ~2.5:1. Vibration-damped mount (rubber grommets + plastic screws)
+                        <span class="tag tag-done">Measured &middot; Mounted</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Pico 2 W LED status indicator</strong>
+                        Code complete (Pi-side bridge + MicroPython firmware). Hardware blocked: Pico won&apos;t enumerate on USB
+                        <span class="tag tag-issue">Hardware Replacement</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="goals">
+                <div class="branch-header"><span>Goals &middot; V10 Verdict</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>NFR1 &le; 250 ms end-to-end latency</strong>
+                        Achieved 138 ms on bench rig AND airframe-mounted stack (112 ms margin)
+                        <span class="tag tag-done">Met</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>NFR2 &ge; 95% detection accuracy</strong>
+                        Not formally evidenced. T1 qualitative; quantitative mAP on labelled set is future work
+                        <span class="tag tag-progress">Not formally measured</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>NFR3 &ge; 5 min flight endurance</strong>
+                        Revised target from &ge; 10 min in Ch 3. Requires Stage 4 hardware flight
+                        <span class="tag tag-deferred">Stage 4</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>NFR4 cost &le; &pound;800 (revised)</strong>
+                        &pound;761 per airframe. Original &lt; &pound;500 target missed; revised target met
+                        <span class="tag tag-done">Met (revised)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Overall V10 verdict</strong>
+                        Hypothesis supported in SITL + hardware-validated software stack. Motion side of autonomy is Stage 4
+                        <span class="tag tag-done">10 met / 3 partial / 2 unmeasured</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="software">
+                <div class="branch-header"><span>Software Stack</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Pi-side MAVLink bridge (pymavlink)</strong>
+                        Transport-agnostic Vehicle class. UDP for SITL / serial for real Pixhawk. Reader-fed queues for races
+                        <span class="tag tag-done">Built &middot; SITL+HW tested</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Autonomy stack</strong>
+                        State machine (9 states, Schmitt-trigger hysteresis) + reactive planner (CRUISING/AVOIDING/IDLE/LANDING)
+                        <span class="tag tag-done">Built &middot; Closed-loop SITL</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Orchestrator</strong>
+                        Single-process bring-up of bridge + FSM + planner + gestures + LED. Monitor-mode default
+                        <span class="tag tag-done">Built &middot; Airframe tested</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>ArduPilot SITL + Gazebo Harmonic</strong>
+                        QUAV250 param overlay. Custom iris_with_lidar + iris_obstacle world. T5 closed loop run
+                        <span class="tag tag-done">Built &middot; 1.92 m clearance</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Jarvis voice assistant</strong>
+                        OpenWakeWord + faster-whisper + Gemini/Ollama brain + Piper TTS. Bench / pre-flight only
+                        <span class="tag tag-done">Built &middot; Deprioritised</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Gesture pipeline (STOP/LAND/COME/RECEDE)</strong>
+                        COCO-17 keypoints + confidence gate + temporal smoothing. Code complete; live Hailo validation pending
+                        <span class="tag tag-progress">Side-tabled post-V10</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Test infrastructure</strong>
+                        7 integration tests under scripts/autonomy/. Two perception transports (synthetic + JSONL)
+                        <span class="tag tag-done">Built</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="features">
+                <div class="branch-header"><span>Core Capabilities</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Stereo obstacle detection (FR1)</strong>
+                        Capture -&gt; rectify -&gt; SGBM half-res -&gt; YOLOv8n on Hailo-8 -&gt; depth fusion. 138 ms loop on airframe
+                        <span class="tag tag-done">Met</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Hover stability (FR4 / T4)</strong>
+                        SITL: 60 s GUIDED hover, max 38 mm h-drift / 99 mm v-drift. Two orders below 500 mm bound
+                        <span class="tag tag-done">Met (SITL)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Closed-loop avoidance (FR3 / T5)</strong>
+                        Gazebo physics-grounded: 1.92 m clearance from cylinder (6.4&times; over 0.3 m bound)
+                        <span class="tag tag-done">Met (SITL + HW substrate)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Multi-run patrol (FR5 / T6)</strong>
+                        10 sequential box_50m missions, 100% pass rate at &plusmn;5% tolerance
+                        <span class="tag tag-done">Met (SITL)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Wind / disturbance rejection</strong>
+                        SIM_WIND_SPD sweep 0&ndash;15 m/s: all hovers + missions pass; h-drift 38&ndash;118 mm
+                        <span class="tag tag-done">Met (SITL)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Telemetry to GCS (FR8)</strong>
+                        SiK 433 MHz indoor through-wall: 25 m, RSSI 145/140, 0 packet loss over 239 samples
+                        <span class="tag tag-done">Met (SITL + HW)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Voice commands (FR6)</strong>
+                        Jarvis bench / pre-flight. Deprioritised for in-flight (acoustic SNR unworkable airborne)
+                        <span class="tag tag-done">Met (bench)</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>First hover with imaging stack (Stage 4)</strong>
+                        Software stack hardware-validated 2026-05-18. Motors-on hover deferred behind dissertation
+                        <span class="tag tag-deferred">Post-submission</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="vision">
+                <div class="branch-header"><span>Perception Loop</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Stereo capture (AR0144)</strong>
+                        USB 2.0, 2560&times;720 MJPEG, 13 fps cap. V4L2 backend with pre-set format
+                        <span class="tag tag-done">Built</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Stereo calibration (cal-4)</strong>
+                        28 valid pairs, RMS 1.10 px, baseline 51.92 mm matches AR0144 spec. Accurate band 0.3&ndash;1.5 m
+                        <span class="tag tag-done">Validated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>SGBM disparity (half-res)</strong>
+                        640&times;360 on rectified halves. 76 ms / frame on Pi 5 CPU (the loop bottleneck)
+                        <span class="tag tag-done">Tuned</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>YOLOv8n on Hailo-8 NPU</strong>
+                        18.5 ms inference end-to-end (9.7 ms NPU-only). NMS in-network. Hailo Model Zoo HEF
+                        <span class="tag tag-done">Deployed</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Depth fusion</strong>
+                        Median of 5&times;5 depth patch at each detection&apos;s bbox centroid -&gt; &quot;person 0.87 @ 0.19m&quot;
+                        <span class="tag tag-done">Built</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>End-to-end</strong>
+                        138 ms / 6.8 fps on bench rig and on airframe-mounted stack. Well under NFR1 250 ms
+                        <span class="tag tag-done">NFR1 Met</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Backlog optimisations</strong>
+                        ROI-only SGBM (queued), YOLO-conditional depth (queued). Only if loop becomes insufficient
+                        <span class="tag tag-planned">Future</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="progress">
+                <div class="branch-header"><span>Dev Milestones</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Stage 1 (foundation, Q1 2026)</strong>
+                        Hardware acquired, dev environment, calibration software prototype
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Stage 2 (avionics, 2026-04-25)</strong>
+                        Frame assembly, wiring, ArduCopter bring-up, ELRS bind, sensor cal, motor direction fix
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Stage 3 (SITL validation, 2026-05-15 -&gt; 17)</strong>
+                        First box mission, T4 hover, T6 multi-run, wind sweep, T5 Gazebo (1.92 m clearance)
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Airframe mount + walkaround (2026-05-17 -&gt; 18)</strong>
+                        Pi+HAT+AR0144 mounted with grommets+plastic screws. 3:34 min walkaround validates full SW stack
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Telemetry validation (2026-05-18)</strong>
+                        SiK bench (RSSI 219/217 STRONG) + indoor walk-out (25 m through walls, 0 packet loss)
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>V10 dissertation (2026-05-19)</strong>
+                        8 embedded figures, all FR/NFR table rows hardware-augmented, verdict refreshed
+                        <span class="tag tag-done">Complete</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Stage 4 (hardware flight)</strong>
+                        Outdoor compass cal + CG re-check + tethered thrust test + first indoor netted hover
+                        <span class="tag tag-deferred">Post-submission</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="challenges">
+                <div class="branch-header"><span>Resolved + Active Issues</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>Arducam quad-cam GPIO conflict (resolved)</strong>
+                        Dropped, swapped for AR0144 USB stereo. Rolling shutter + AI HAT+ GPIO conflict
+                        <span class="tag tag-done">Pivoted</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>UPS HAT pogo-pin failure (resolved)</strong>
+                        Pogo pin shorted under vibration. Dropped for ZTW UBEC 8A
+                        <span class="tag tag-done">Pivoted</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>BLHeli_S DShot lockout (resolved)</strong>
+                        SERVO_BLH_RVMASK reverse left ESCs in handshake-wait. Reverted to PWM mode + hardware phase swap
+                        <span class="tag tag-done">Worked around</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>SiK RADIO_STATUS injection silence (resolved)</strong>
+                        Bare pymavlink doesn&apos;t trigger SiK&apos;s bidirectional-traffic mode. 1 Hz GCS heartbeat thread fixed it
+                        <span class="tag tag-done">Patched</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Walkaround STATUS line blank fields (resolved)</strong>
+                        SR0_* / SR1_* USB+SiK stream rates were 0. Set in EEPROM (durable for any future client)
+                        <span class="tag tag-done">Configured</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Outdoor compass re-cal (open)</strong>
+                        Indoor cal was yellow. Must redo on grass away from rebar/cars. Blocks Stage 4
+                        <span class="tag tag-issue">Pre-flight blocker</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Pico 2 W replacement (open)</strong>
+                        Unit died, won&apos;t enumerate over USB across 5 cables + BOOTSEL. Code is ready for replacement
+                        <span class="tag tag-issue">Hardware needed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="branch" data-branch-id="research">
+                <div class="branch-header"><span>Research Findings</span><span class="drag-handle">::</span></div>
+                <div class="branch-content">
+                    <div class="sub-item">
+                        <strong>NPU-is-not-the-bottleneck (key finding)</strong>
+                        NPU 18.5 ms (13%) vs SGBM 76 ms (55%) of 138 ms loop. CPU-side optimisations are the productive target
+                        <span class="tag tag-done">Empirical</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Benchy-driven NPU selection methodology</strong>
+                        Primary threshold + secondary metric + tiebreaker + hybrid-compute fallback. Reproducible alternative to TOPS headline
+                        <span class="tag tag-done">Contributed</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Vision-only viability on Pi-class hardware</strong>
+                        Validated for indoor 0.3&ndash;1.5 m depth band at flight-relevant latencies. Bounded by cal-4 baseline
+                        <span class="tag tag-done">Validated</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Voice vs gesture trade-off (acoustic SNR)</strong>
+                        Motor noise 75&ndash;85 dB at 1 m vs operator voice attenuated 6 dB / 2&times; distance
+                        <span class="tag tag-done">Analysed</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Cost positioning</strong>
+                        &pound;761 per airframe &mdash; DJI Mini 4 Pro price point with open-architecture stack
+                        <span class="tag tag-done">Documented</span>
+                    </div>
+                    <div class="sub-item">
+                        <strong>Open question: motor-on perception quality</strong>
+                        Vibration-on-SGBM characterisation requires first motors-on session. Mount design (grommets) is candidate fix
+                        <span class="tag tag-planned">Stage 4</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-bar">
+        <kbd>Drag header</kbd> move branch &middot; <kbd>Drag canvas</kbd> pan &middot; <kbd>Scroll</kbd> zoom
+    </div>
+
+    <div class="legend">
+        <h3>Status Legend</h3>
+        <div class="legend-item">
+            <span class="legend-tag tag-done">Done</span>
+            <span>Complete &middot; Met</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-tag tag-progress">Partial</span>
+            <span>In Progress</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-tag tag-issue">Open</span>
+            <span>Active Issue</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-tag tag-planned">Future</span>
+            <span>Planned</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-tag tag-deferred">Stage 4</span>
+            <span>Deferred</span>
+        </div>
+    </div>
+
+    <script>
+        // ----- Configuration -----
+        const STORAGE_KEY = 'autonobird-mindmap-positions-v10';
+        const CANVAS_W = 3200;
+        const CANVAS_H = 2600;
+        const CENTRE = { x: 1600, y: 1300 };
+
+        const DEFAULT_POSITIONS = {
+            hardware:   { x:   60, y:   60 },
+            goals:      { x: 1430, y:   60 },
+            software:   { x: 2800, y:   60 },
+            features:   { x:   60, y:  900 },
+            vision:     { x: 2800, y:  950 },
+            progress:   { x:   60, y: 1800 },
+            challenges: { x: 1430, y: 1800 },
+            research:   { x: 2800, y: 1800 },
+        };
+
+        // ----- State -----
+        let zoom = 1;
+        let panX = 0;
+        let panY = 0;
+
+        let isPanning = false;
+        let isDragging = false;
+        let dragBranch = null;
+
+        let startMouseX = 0;
+        let startMouseY = 0;
+        let startBranchX = 0;
+        let startBranchY = 0;
+        let startPanX = 0;
+        let startPanY = 0;
+
+        const viewport = document.getElementById('viewport');
+        const canvas = document.getElementById('canvas');
+        const zoomReadout = document.getElementById('zoom-readout');
+
+        // ----- Transform application -----
+        function applyTransform() {
+            canvas.style.transform =
+                `translate(${panX}px, ${panY}px) scale(${zoom})`;
+            zoomReadout.textContent = Math.round(zoom * 100) + '%';
+        }
+
+        // ----- Position application -----
+        function applyPositions(positions) {
+            document.querySelectorAll('.branch').forEach(branch => {
+                const id = branch.dataset.branchId;
+                const pos = positions[id] || DEFAULT_POSITIONS[id];
+                if (pos) {
+                    branch.style.left = pos.x + 'px';
+                    branch.style.top  = pos.y + 'px';
+                }
+            });
+            updateConnections();
+        }
+
+        function loadSavedPositions() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (_) {}
+            return null;
+        }
+
+        function savePositions() {
+            const out = {};
+            document.querySelectorAll('.branch').forEach(branch => {
+                const id = branch.dataset.branchId;
+                const x = parseFloat(branch.style.left) || 0;
+                const y = parseFloat(branch.style.top)  || 0;
+                out[id] = { x, y };
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
+            } catch (_) {}
+        }
+
+        // ----- Connection lines -----
+        function updateConnections() {
+            document.querySelectorAll('.branch').forEach(branch => {
+                const id = branch.dataset.branchId;
+                const line = document.querySelector(`[data-line-id="${id}"]`);
+                if (!line) return;
+                const x = parseFloat(branch.style.left) || 0;
+                const y = parseFloat(branch.style.top)  || 0;
+                const w = branch.offsetWidth  || 340;
+                const h = branch.offsetHeight || 100;
+                const bx = x + w / 2;
+                const by = y + h / 2;
+                const dx = bx - CENTRE.x;
+                const dy = by - CENTRE.y;
+                const halfW = w / 2;
+                const halfH = h / 2;
+                const tx = (dx === 0) ? Infinity : halfW / Math.abs(dx);
+                const ty = (dy === 0) ? Infinity : halfH / Math.abs(dy);
+                const t  = Math.min(tx, ty);
+                const ex = bx - dx * t;
+                const ey = by - dy * t;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const sx = (len === 0) ? CENTRE.x : CENTRE.x + (dx / len) * 150;
+                const sy = (len === 0) ? CENTRE.y : CENTRE.y + (dy / len) * 150;
+                line.setAttribute('d', `M${sx.toFixed(1)},${sy.toFixed(1)} L${ex.toFixed(1)},${ey.toFixed(1)}`);
+            });
+        }
+
+        // ----- Branch dragging -----
+        function setupDragging() {
+            document.querySelectorAll('.branch-header').forEach(header => {
+                header.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    const branch = header.closest('.branch');
+                    if (!branch) return;
+                    isDragging = true;
+                    dragBranch = branch;
+                    startMouseX = e.clientX;
+                    startMouseY = e.clientY;
+                    startBranchX = parseFloat(branch.style.left) || 0;
+                    startBranchY = parseFloat(branch.style.top)  || 0;
+                    branch.classList.add('dragging');
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        // ----- Viewport pan + zoom -----
+        function setupPanZoom() {
+            viewport.addEventListener('mousedown', (e) => {
+                if (isDragging || e.button !== 0) return;
+                isPanning = true;
+                startMouseX = e.clientX;
+                startMouseY = e.clientY;
+                startPanX = panX;
+                startPanY = panY;
+                viewport.classList.add('panning');
+            });
+
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const oldZoom = zoom;
+                const factor = Math.exp(-e.deltaY * 0.0015);
+                const next = Math.max(0.18, Math.min(3.5, zoom * factor));
+                if (next === oldZoom) return;
+                const rect = viewport.getBoundingClientRect();
+                const cx = e.clientX - rect.left;
+                const cy = e.clientY - rect.top;
+                const k = next / oldZoom;
+                panX = cx - (cx - panX) * k;
+                panY = cy - (cy - panY) * k;
+                zoom = next;
+                applyTransform();
+            }, { passive: false });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && dragBranch) {
+                const dx = (e.clientX - startMouseX) / zoom;
+                const dy = (e.clientY - startMouseY) / zoom;
+                dragBranch.style.left = (startBranchX + dx) + 'px';
+                dragBranch.style.top  = (startBranchY + dy) + 'px';
+                updateConnections();
+            } else if (isPanning) {
+                panX = startPanX + (e.clientX - startMouseX);
+                panY = startPanY + (e.clientY - startMouseY);
+                applyTransform();
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging && dragBranch) {
+                dragBranch.classList.remove('dragging');
+                savePositions();
+            }
+            if (isPanning) viewport.classList.remove('panning');
+            isDragging = false;
+            isPanning = false;
+            dragBranch = null;
+        });
+
+        // ----- Fit to viewport -----
+        function fitToScreen() {
+            const vpW = viewport.clientWidth;
+            const vpH = viewport.clientHeight;
+            const z = Math.min(vpW / CANVAS_W, vpH / CANVAS_H) * 0.92;
+            zoom = z;
+            panX = (vpW - CANVAS_W * z) / 2;
+            panY = (vpH - CANVAS_H * z) / 2;
+            applyTransform();
+        }
+
+        // ----- Controls -----
+        function zoomBy(factor) {
+            const vpW = viewport.clientWidth;
+            const vpH = viewport.clientHeight;
+            const cx = vpW / 2;
+            const cy = vpH / 2;
+            const oldZoom = zoom;
+            const next = Math.max(0.18, Math.min(3.5, zoom * factor));
+            if (next === oldZoom) return;
+            const k = next / oldZoom;
+            panX = cx - (cx - panX) * k;
+            panY = cy - (cy - panY) * k;
+            zoom = next;
+            applyTransform();
+        }
+
+        document.getElementById('btn-zoom-in').addEventListener('click',  () => zoomBy(1.2));
+        document.getElementById('btn-zoom-out').addEventListener('click', () => zoomBy(1 / 1.2));
+        document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            applyPositions(DEFAULT_POSITIONS);
+            try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+            fitToScreen();
+        });
+
+        // ----- Init -----
+        const saved = loadSavedPositions();
+        applyPositions(saved || DEFAULT_POSITIONS);
+        setupDragging();
+        setupPanZoom();
+        fitToScreen();
+        requestAnimationFrame(updateConnections);
+        window.addEventListener('resize', () => { fitToScreen(); });
+    </script>
+</body>
+</html>

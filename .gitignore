@@ -6,7 +6,16 @@ __pycache__/
 
 # Project meta — kept local (per global rules)
 CLAUDE.md
-resources/
+
+# resources/ is default-deny with explicit carve-outs for publishable artefacts.
+# Dissertation .docx, raw videos, third-party CAD/datasheets, and personal
+# notes stay local; the items below ship with the repo.
+resources/*
+!resources/AutonoBird_MindMap.html
+!resources/AutonoBird-Poster.html
+!resources/params/
+!resources/presentation/
+!resources/pose_diagrams/
 
 # Hailo NPU compiled models (binary, 5-20 MB each)
 *.hef
