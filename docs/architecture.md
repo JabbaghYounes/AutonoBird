@@ -39,7 +39,6 @@ Each subsystem lives under `scripts/<name>/` with its own setup script, systemd 
 | Stereo calibration (AR0144) | `scripts/ar0144/` | 40-pose guided calibration + depth viewer + pose-reference PDF generator | cal-4 calibration complete (RMS 1.10 px) |
 | Perception (YOLO + depth) | `scripts/perception/` | YOLOv8n on Hailo-8 + stereo depth fusion (`yolo_detect.py`, `depth_detect.py`); JSONL detection-event emitter for the autonomy stack | Running end-to-end at 6.8 fps; JSONL pipe wired |
 | ArduPilot SITL | `scripts/sitl/` | QUAV250 parameter overlay + launch wrapper + scripted missions for the simulated flight stack (dev-workstation, not Pi); Gazebo Harmonic integration under `gazebo/` (custom `iris_with_lidar` model + `iris_obstacle.sdf` world for T5) | Box mission flown, multi-run replication closed, wind sweep closed, T5 closed-loop against physics-grounded Gazebo obstacle passed (1.92 m clearance) |
-| Stereo depth (Arducam) | `scripts/arducam/` | Quad-camera kit alternative — superseded by AR0144 | Reference only |
 | Voice assistant | `scripts/jarvis/` | Local wake-word + ASR + LLM + TTS pipeline | Standalone subsystem |
 | Pico LED indicators | `scripts/pico-led/` | Status LEDs on a separate Pico 2 W (MicroPython) | Standalone subsystem |
 | Boot IP notifier | `scripts/email-ip-notifier/` | Emails the drone's IP on boot for headless SSH access | Standalone subsystem |

@@ -10,7 +10,7 @@ Strong 3D parameter coverage
 
 You can either move the board or the camera — just create these relative poses.
 
-🎯 Distance Zones (Critical for Drone Use)
+## Distance Zones (Critical for Drone Use)
 
 We’ll divide into 4 distance bands:
 
@@ -24,7 +24,7 @@ Far: 2.5–4 m (important for early obstacle detection)
 
 10 poses per zone = 40 total
 
-📦 1️⃣ NEAR RANGE (0.3–0.6 m) – 10 Poses
+## Zone 1 — NEAR RANGE (0.3-0.6 m) — 10 Poses
 
 These tune close-range depth (landing, tight spaces).
 
@@ -48,7 +48,7 @@ Bottom-right of image frame
 
 Very close, filling ~80% of frame
 
-📦 2️⃣ MID-NEAR (0.6–1.2 m) – 10 Poses
+## Zone 2 — MID-NEAR (0.6-1.2 m) — 10 Poses
 
 Important for obstacle avoidance at moderate speed.
 
@@ -72,7 +72,7 @@ Diagonal (top-left to bottom-right tilt)
 
 Opposite diagonal
 
-📦 3️⃣ MID RANGE (1.2–2.5 m) – 10 Poses
+## Zone 3 — MID RANGE (1.2-2.5 m) — 10 Poses
 
 Critical for navigation.
 
@@ -96,7 +96,7 @@ Slight perspective skew (one corner closer)
 
 Board small in frame (~30% coverage)
 
-📦 4️⃣ FAR RANGE (2.5–4 m) – 10 Poses
+## Zone 4 — FAR RANGE (2.5-4 m) — 10 Poses
 
 Important for long-range disparity calibration.
 

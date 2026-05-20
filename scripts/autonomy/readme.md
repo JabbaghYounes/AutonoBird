@@ -6,14 +6,14 @@ This subsystem hosts the full closed-loop autonomy stack:
 
 | Module | Status | Purpose |
 |---|---|---|
-| `state_machine.py` | ✅ live | Passive flight-state observer; nine states; Schmitt-trigger hysteresis on VFR_HUD climb rate |
-| `planner.py` | ✅ live | Reactive sector-based obstacle avoider; CRUISING/AVOIDING/IDLE/LANDING modes with entry/exit hysteresis; cached perception frame for rate-mismatch tolerance |
-| `perception_source.py` | ✅ live | Abstract perception input — `SyntheticPerceptionSource` (in-process scripted timeline) and `DepthDetectSource` (tails JSONL from `depth_detect.py --jsonl` or the Gazebo bridge). Detections carry an optional `keypoints` field (17 COCO body keypoints) used by the gesture classifier when a pose-capable model is feeding the JSONL. |
-| `gazebo_perception_bridge.py` | ✅ live | Subscribes to a Gazebo Harmonic LaserScan topic via `gz topic -e --json-output`, converts each scan into a `PerceptionFrame` record matching `depth_detect.py`'s schema. Used by the T5 Gazebo closed-loop test |
-| `orchestrator.py` | ✅ live | Single-process autonomy stack bring-up: Vehicle bridge → FSM → optional Planner → optional Gesture pipeline → optional LED bridge. Defaults to monitor mode (no commands). Exposes `command_hold/resume/land/rtl` as intent hooks for voice/gesture/external code |
-| `gesture_classifier.py` | ✅ live | Body-pose gesture recognition (STOP/LAND/COME/RECEDE) on COCO-17 keypoints; per-keypoint confidence gating + 3-frame temporal smoothing |
-| `gesture_action_map.py` | ✅ live | Dispatches recognised gestures to orchestrator intent methods with cooldown to prevent re-fires |
-| `voice_action_map.py` | ⏳ | Jarvis intent → orchestrator intent mapping. Deprioritised relative to gestures — see "Why gesture is the primary modality" below |
+| `state_machine.py` | live | Passive flight-state observer; nine states; Schmitt-trigger hysteresis on VFR_HUD climb rate |
+| `planner.py` | live | Reactive sector-based obstacle avoider; CRUISING/AVOIDING/IDLE/LANDING modes with entry/exit hysteresis; cached perception frame for rate-mismatch tolerance |
+| `perception_source.py` | live | Abstract perception input — `SyntheticPerceptionSource` (in-process scripted timeline) and `DepthDetectSource` (tails JSONL from `depth_detect.py --jsonl` or the Gazebo bridge). Detections carry an optional `keypoints` field (17 COCO body keypoints) used by the gesture classifier when a pose-capable model is feeding the JSONL. |
+| `gazebo_perception_bridge.py` | live | Subscribes to a Gazebo Harmonic LaserScan topic via `gz topic -e --json-output`, converts each scan into a `PerceptionFrame` record matching `depth_detect.py`'s schema. Used by the T5 Gazebo closed-loop test |
+| `orchestrator.py` | live | Single-process autonomy stack bring-up: Vehicle bridge → FSM → optional Planner → optional Gesture pipeline → optional LED bridge. Defaults to monitor mode (no commands). Exposes `command_hold/resume/land/rtl` as intent hooks for voice/gesture/external code |
+| `gesture_classifier.py` | live | Body-pose gesture recognition (STOP/LAND/COME/RECEDE) on COCO-17 keypoints; per-keypoint confidence gating + 3-frame temporal smoothing |
+| `gesture_action_map.py` | live | Dispatches recognised gestures to orchestrator intent methods with cooldown to prevent re-fires |
+| `voice_action_map.py` | pending | Jarvis intent → orchestrator intent mapping. Deprioritised relative to gestures — see "Why gesture is the primary modality" below |
 
 | Test / harness | Purpose |
 |---|---|
@@ -194,12 +194,23 @@ Five sub-tests cover: per-gesture classification, low-confidence rejection, alte
 
 ### Running gestures live (Pi rig)
 
-1. Flash the Hailo pose model into the perception subsystem (one of `~/Documents/Benchy/resources/hefs/v8_pose_n_hailo8.hef`, `v11_pose_n_hailo8.hef`).
-2. Extend `scripts/perception/depth_detect.py` to decode pose output and emit keypoints in the JSONL (currently emits detection-only output — future work).
-3. Launch the orchestrator with gestures enabled, pointed at the JSONL the perception pipeline is writing:
+Perception side is code-complete: `scripts/perception/depth_detect.py --pose` loads `v8_pose_n_hailo8.hef`, runs the defensive multi-format pose decoder, and emits a `keypoints` list per detection in the JSONL. **Untested against live Hailo as of the 2026-05-20 dissertation submission** — the first Pi run validates the assumed `yolov8_pose_postprocess` output layout; the decoder may need tensor-shape iteration if the actual HEF output diverges from the assumed layout. See `project_current_status.md` auto-memory for the post-submission live-validation plan.
+
+To run end-to-end on the Pi rig once the pose HEF has been validated:
+
+1. Confirm the pose HEF is at `scripts/perception/models/v8_pose_n_hailo8.hef` (one of `~/Documents/Benchy/resources/hefs/v8_pose_n_hailo8.hef` or `v11_pose_n_hailo8.hef`).
+2. Run perception with pose decoding enabled, emitting JSONL:
 
 ```bash
-python orchestrator.py --enable-gestures \
+cd scripts/perception
+./venv/bin/python depth_detect.py --pose --jsonl /tmp/perception.jsonl --no-gui
+```
+
+3. Launch the orchestrator with gestures enabled, pointed at the same JSONL:
+
+```bash
+cd scripts/autonomy
+./venv/bin/python orchestrator.py --enable-gestures \
     --perception jsonl --jsonl-path /tmp/perception.jsonl --tail-from-end
 ```
 

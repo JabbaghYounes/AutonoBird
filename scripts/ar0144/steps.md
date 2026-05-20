@@ -2,13 +2,9 @@
 
 ## Prerequisites (shared)
 
-1. **Checkerboard** — print a 7x5 inner corners pattern with 30mm squares, mount on something rigid (cardboard, clipboard)
+1. **Checkerboard** — print a 7x5 inner corners pattern with 26 mm squares (the board AutonoBird was actually calibrated against — a print-shop scaled the A3 design down to A4). Mount on something rigid (cardboard, clipboard). `SQUARE_SIZE_MM = 26.0` in both calibration scripts; do not change without re-printing.
 2. **Camera** — Waveshare AR0144 stereo USB camera plugged in
-3. **Dependencies**:
-```bash
-pip install opencv-python numpy
-```
-
+3. **Dependencies**: this subsystem runs on system Python (no venv) and depends on the apt-installed `python3-opencv` package plus `numpy`. If you need to install manually: `pip install opencv-python numpy`.
 4. **Verify camera is detected**:
 ```bash
 cd ~/Documents/AutonoBird/scripts/ar0144
@@ -17,12 +13,12 @@ python3 -c "import cv2; cap = cv2.VideoCapture(0); print('OK' if cap.isOpened() 
 
 If that prints `FAIL`, try index `1` or `2` and update `CAMERA_INDEX` in both scripts.
 
-## Method 1: Manual (`stereo_calibration.py`)
+## Method 1: Manual (`basic_calibration.py`)
 
 ```bash
-python3 stereo_calibration.py capture      # freeform — you decide where to hold the board
-python3 stereo_calibration.py calibrate    # compute calibration
-python3 stereo_calibration.py depth        # live depth viewer
+python3 basic_calibration.py capture      # freeform — you decide where to hold the board
+python3 basic_calibration.py calibrate    # compute calibration
+python3 basic_calibration.py depth        # live depth viewer
 ```
 
 During capture:

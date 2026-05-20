@@ -76,14 +76,6 @@ Five closed-loop SITL tests demonstrate the full chain:
 - Entry points: see test list above; data contract producers `make_synthetic_jsonl.py` (synthetic) and `gazebo_perception_bridge.py` (Gazebo lidar → JSONL)
 - Docs: [`readme.md`](../scripts/autonomy/readme.md)
 
-### Arducam IMX519 stereo depth (legacy)
-
-Quad-camera kit using Picamera2 with I2C channel switching. Replaced by AR0144 due to rolling-shutter artefacts and GPIO conflict with the HAILO AI HAT+, but retained for reference and possible future use on a larger airframe.
-
-- Path: `scripts/arducam/`
-- Entry point: `stereo_depth.py {calibrate|compute_cal|depth|capture}`
-- Docs: [`readme.md`](../scripts/arducam/readme.md)
-
 ### Jarvis voice assistant
 
 Local-first wake-word + ASR + LLM + TTS pipeline. Wake word via openWakeWord ("hey jarvis"), speech via PyAudio with amplitude-based VAD, transcription via faster-whisper (auto-sized by available RAM), response via Gemini API or local Ollama (factory-selected), synthesis via Piper TTS. All run on the Pi.
@@ -115,32 +107,34 @@ Subsystem startup order is not coordinated: each starts independently on boot. I
 ## Configuration
 
 - Per-subsystem `config.json` files (gitignored), with `config.example.json` templates checked in
-- Exception: Arducam stereo config is a Python `CONFIG` dict at the top of `stereo_depth.py`
 - Jarvis config selects the LLM backend (`"llm_backend": "ollama"` or `"gemini"`), Whisper model size, wake word, voice, and conversation parameters
 
 ## Status
 
 | Capability | Status |
 |---|---|
-| Flight controller bring-up (ArduCopter 4.6.3, ELRS, failsafes, motor direction) | ✓ Stage 2 closed |
-| NPU selection (Benchy-driven, Hailo-8 over Hailo-10H) | ✓ Resolved |
-| AR0144 stereo calibration | ✓ cal-4, RMS 1.10 px |
-| YOLO detection on Hailo-8 | ✓ Live |
-| Stereo depth + YOLO fusion (handheld) | ✓ Live, 138 ms loop |
-| Voice assistant (Jarvis) | ✓ Standalone subsystem |
-| ArduPilot SITL bring-up (QUAV250 overlay) | ✓ First box mission flown |
-| Pi-side MAVLink bridge (`scripts/flight-controller/bridge.py`) | ✓ Live; smoke-tested against SITL |
-| Flight-state machine (`scripts/autonomy/state_machine.py`) | ✓ Live; 9 states, hysteresis on climb rate |
-| Reactive obstacle-avoidance planner (`scripts/autonomy/planner.py`) | ✓ Live; CRUISING/AVOIDING modes with hysteresis |
-| Perception → bridge → SITL closed loop | ✓ Demonstrated against synthetic + JSONL transports |
-| `depth_detect.py --jsonl` detection-event pipe | ✓ Live; autonomy `DepthDetectSource` consumes it |
-| T4 hover stability (SITL) | ✓ 38 mm max h-drift over 60 s @ 5 m hover (bound 500 mm) |
-| T6 multi-run mission replication (SITL) | ✓ 10/10 box_50m runs at ±5 % extent tolerance |
-| Wind / disturbance rejection sweep (SITL) | ✓ 0/5/10/15 m/s, 100 % pass on 8 missions + 4 hovers |
-| T5 closed-loop avoidance (Gazebo Harmonic, physics-grounded obstacle) | ✓ 1.92 m clearance from cylinder surface (bound 0.3 m, 6.4× headroom) |
-| Global path planner (A*/RRT*) on top of the reactive avoider | Pending — § 6.6 future work |
-| First physical hover with imaging stack mounted | Deferred behind dissertation submission |
-| ROS 2 / Meshtastic / ATAK | Future work (dissertation § 6.6) |
+| Flight controller bring-up (ArduCopter 4.6.3, ELRS, failsafes, motor direction) | done — Stage 2 closed |
+| NPU selection (Benchy-driven, Hailo-8 over Hailo-10H) | done |
+| AR0144 stereo calibration | done — cal-4, RMS 1.10 px |
+| YOLO detection on Hailo-8 | done — live |
+| Stereo depth + YOLO fusion (handheld) | done — live, 138 ms loop |
+| Voice assistant (Jarvis) | done — standalone subsystem |
+| ArduPilot SITL bring-up (QUAV250 overlay) | done — first box mission flown |
+| Pi-side MAVLink bridge (`scripts/flight-controller/bridge.py`) | done — live; smoke-tested against SITL and validated on the airframe |
+| Flight-state machine (`scripts/autonomy/state_machine.py`) | done — live; 9 states, hysteresis on climb rate |
+| Reactive obstacle-avoidance planner (`scripts/autonomy/planner.py`) | done — live; CRUISING/AVOIDING modes with hysteresis |
+| Perception → bridge → SITL closed loop | done — demonstrated against synthetic + JSONL transports |
+| `depth_detect.py --jsonl` detection-event pipe | done — live; autonomy `DepthDetectSource` consumes it |
+| T4 hover stability (SITL) | done — 38 mm max h-drift over 60 s @ 5 m hover (bound 500 mm) |
+| T6 multi-run mission replication (SITL) | done — 10/10 box_50m runs at +/-5 % extent tolerance |
+| Wind / disturbance rejection sweep (SITL) | done — 0/5/10/15 m/s, 100 % pass on 8 missions + 4 hovers |
+| T5 closed-loop avoidance (Gazebo Harmonic, physics-grounded obstacle) | done — 1.92 m clearance from cylinder surface (bound 0.3 m, 6.4x headroom) |
+| Hardware-airframe stack validation walkaround | done — 2026-05-18, 3:34 min handheld, 138.1 ms loop reproduced on flight hardware |
+| SiK 433 MHz telemetry link validation | done — 2026-05-18, 25 m indoor through-wall LOS at 0 packet loss |
+| Orchestrator + gesture pipeline (code complete, perception-side untested against live Hailo) | pending live Hailo validation |
+| Global path planner (A*/RRT*) on top of the reactive avoider | pending — Sec. 6.6 future work |
+| First physical hover with imaging stack mounted | pending Stage 4 hardware flight |
+| ROS 2 / Meshtastic / ATAK | pending — dissertation Sec. 6.6 future work |
 
 See dissertation Ch 5 for the implementation roadmap and Ch 6 for the empirical results.
 
