@@ -322,7 +322,7 @@ Hardware build complete 2026-04-22. Stage 2 firmware bring-up closed 2026-04-24:
 - [ ] Outdoor compass re-cal on grass, away from rebar/cars — bench cal was indoor-yellow, outdoor expected green
 - [ ] DShot600 restoration via classic BLHeliSuite (Wine) factory reset of all four ESCs — deferred, not blocking first flight
 
-### Parameter backups saved during Stage 2 (in `resources/`, gitignored)
+### Parameter backups saved during Stage 2 (in `resources/params/`, gitignored)
 
 - `autonobird-stage2-<date>.params` — early-session audit snapshot (pre-BLHeli-revert)
 - `autonobird-stage2-post-blheli-revert.params` — after `SERVO_BLH_RVMASK=0` / `SERVO_BLH_AUTO=0`
@@ -405,7 +405,7 @@ Run through this before any powered bench test or first flight.
 
 ## Photos
 
-See `resources/drone-pics/Drone/` for current build photos (2026-04-22).
+See `resources/images/Drone/` for current build photos (2026-04-22).
 
 ## See also
 
