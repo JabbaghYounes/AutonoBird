@@ -46,4 +46,4 @@ Two sibling tools live in separate repos and are referenced in the dissertation 
 
 ## Licence
 
-[MIT](LICENSE). © 2025 Younes Jabbagh.
+[MIT](LICENSE).
